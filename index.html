@@ -208,6 +208,144 @@
       box-shadow: 0 0 0 2px rgba(139,92,246,0.5);
       border-radius: 6px;
     }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 5, 5, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-content {
+      background: var(--glass);
+      border: 1px solid var(--outline);
+      box-shadow: 0 0 50px rgba(139, 92, 246, 0.2);
+      border-radius: 24px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+      transform: scale(0.95);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .modal-overlay.open .modal-content {
+      transform: scale(1);
+    }
+    .input-group label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #94a3b8;
+      margin-bottom: 0.5rem;
+    }
+    .input-field {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 0.75rem;
+      color: white;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: var(--glow);
+      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+    }
+    .input-field option {
+      background: #1a1a20;
+    }
+
+    /* Habit Card Styles */
+    .habit-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 1.25rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .habit-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .habit-card.done-full {
+      border-color: rgba(139, 92, 246, 0.5);
+      background: rgba(139, 92, 246, 0.1);
+    }
+    .habit-card.done-emergency {
+      border-color: rgba(245, 158, 11, 0.5); /* Amber */
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .habit-card.missed {
+      border-color: rgba(239, 68, 68, 0.3); /* Red */
+      opacity: 0.6;
+    }
+    .btn-action {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #e2e8f0;
+    }
+    .btn-primary:hover {
+      background: rgba(139, 92, 246, 0.4);
+    }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+    }
+    .btn-secondary:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #e2e8f0;
+    }
+    .btn-emergency {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fcd34d;
+    }
+    .btn-emergency:hover {
+      background: rgba(245, 158, 11, 0.2);
+    }
+    .btn-missed {
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+    .btn-missed:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+    .friction-tag {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #cbd5e1;
+      cursor: pointer;
+    }
+    .friction-tag.selected {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: rgba(139, 92, 246, 0.5);
+      color: white;
+    }
   </style>
 </head>
 <body class="font-inter">
@@ -215,11 +353,96 @@
   <div class="floating-light w-80 h-80 top-10 left-10"></div>
   <div class="floating-light w-96 h-96 bottom-20 right-10"></div>
 
+  <!-- Friction Log Modal -->
+  <div id="frictionModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="font-display text-2xl mb-4">What got in the way?</h3>
+      <p class="text-sm text-slate-400 mb-6">Honesty helps the system adapt. Why didn't this happen?</p>
+
+      <div class="flex flex-wrap gap-2 mb-6" id="frictionTags">
+        <button class="friction-tag" onclick="frictionModal.toggleTag(this)">Forgot</button>
+        <button class="friction-tag" onclick="frictionModal.toggleTag(this)">Too Tired</button>
+        <button class="friction-tag" onclick="frictionModal.toggleTag(this)">No Time</button>
+        <button class="friction-tag" onclick="frictionModal.toggleTag(this)">Procrastinated</button>
+        <button class="friction-tag" onclick="frictionModal.toggleTag(this)">Unexpected Event</button>
+      </div>
+
+      <div class="input-group mb-6">
+        <label>Notes (Optional)</label>
+        <textarea id="frictionNotes" class="input-field" rows="3"></textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="frictionModal.close()" class="flex-1 py-3 rounded-xl border border-white/10 text-slate-300">Cancel</button>
+        <button onclick="frictionModal.save()" class="flex-1 py-3 rounded-xl bg-violet-600/80 text-white">Log & Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Review Modal -->
+  <div id="reviewModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="font-display text-2xl mb-6">System Diagnostics</h3>
+
+      <div class="space-y-6">
+        <div>
+          <h4 class="text-xs uppercase tracking-widest text-slate-500 mb-3">Top Friction Points</h4>
+          <div id="frictionStats" class="flex flex-wrap gap-2">
+            <!-- Injected JS -->
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-xs uppercase tracking-widest text-slate-500 mb-3">Habit Health</h4>
+          <div id="habitHealth" class="space-y-2">
+            <!-- Injected JS -->
+          </div>
+        </div>
+
+        <button onclick="document.getElementById('reviewModal').classList.remove('open')" class="w-full py-3 mt-4 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5">Close Diagnostics</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Habit Creation Modal -->
+  <div id="habitModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="font-display text-2xl mb-6">Design New Habit</h3>
+      <div class="space-y-4">
+        <div class="input-group">
+          <label>Identity (The "Why")</label>
+          <select id="habitCategory" class="input-field">
+            <!-- Options injected via JS -->
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Behavior (The "What")</label>
+          <input type="text" id="habitTitle" class="input-field" placeholder="e.g. Read a book">
+        </div>
+        <div class="input-group">
+          <label>Trigger (The "When")</label>
+          <input type="text" id="habitTrigger" class="input-field" placeholder="e.g. After I brush my teeth">
+        </div>
+        <div class="input-group">
+          <label>Emergency Cord (Minimum Viable)</label>
+          <input type="text" id="habitEmergency" class="input-field" placeholder="e.g. Read 1 page">
+          <p class="text-xs text-slate-500 mt-1">What you'll do on your worst day to keep the streak.</p>
+        </div>
+        <div class="flex gap-3 mt-8">
+          <button id="cancelHabit" class="flex-1 py-3 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5 transition">Cancel</button>
+          <button id="saveHabit" class="flex-1 py-3 rounded-xl bg-violet-600/80 hover:bg-violet-600 text-white font-medium transition shadow-lg shadow-violet-900/40">Initialize</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <main class="relative z-10 min-h-screen px-6 py-10 flex flex-col items-center gap-10">
+    <button id="reviewBtn" class="absolute top-6 right-6 text-xs text-slate-500 uppercase tracking-widest hover:text-violet-400 transition">System Status</button>
+
     <header class="text-center space-y-2">
       <p class="text-xs uppercase hud-label text-slate-400">Universal Gamified Productivity HUD</p>
       <h1 class="font-display text-4xl sm:text-5xl text-white">Neko-Quest</h1>
-      <p class="text-sm text-slate-400 max-w-xl mx-auto">Rename your XP channels, log daily quests, and let your guardian cat celebrate your level-ups.</p>
+      <p class="text-sm text-slate-400 max-w-xl mx-auto">Design habits with constraints. Use the emergency cord on bad days. Review friction weekly.</p>
     </header>
 
     <section class="w-full max-w-5xl flex flex-col gap-4">
@@ -274,27 +497,62 @@
   </main>
 
   <script>
-    const STORAGE_KEY = 'neko_quest_state_v1';
+    const STORAGE_KEY = 'neko_quest_state_v2';
+
+    // Identity categories (we will calculate scores dynamically)
+    const DEFAULT_IDENTITIES = [
+      { id: 'cat_1', name: 'Vitality', color: '#10B981' }, // Green
+      { id: 'cat_2', name: 'Focus', color: '#8B5CF6' },    // Violet
+      { id: 'cat_3', name: 'Creation', color: '#F59E0B' }  // Amber
+    ];
+
     const DEFAULT_STATE = {
-      stats: [
-        { name: 'Fitness', value: 60 },
-        { name: 'Study', value: 40 },
-        { name: 'Coding', value: 75 }
+      habits: [
+        {
+          id: 'h_1',
+          title: 'Deep Work Session',
+          trigger: 'After morning coffee',
+          emergency: '5 minutes of planning',
+          category: 'cat_2',
+          history: {},
+          friction_log: []
+        },
+        {
+          id: 'h_2',
+          title: 'Morning Movement',
+          trigger: 'Before checking phone',
+          emergency: 'Stretch for 2 mins',
+          category: 'cat_1',
+          history: {},
+          friction_log: []
+        }
       ],
-      quests: [
-        { text: 'Plan top 3 priorities', done: false },
-        { text: 'Complete a focused sprint', done: false },
-        { text: 'Hydrate + stretch', done: false }
-      ]
+      identities: DEFAULT_IDENTITIES
     };
 
     const clamp = (num, min, max) => Math.max(min, Math.min(max, num));
+    const generateId = () => Math.random().toString(36).substr(2, 9);
+
+    const escapeHtml = (unsafe) => {
+      if (!unsafe) return '';
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    };
 
     const loadState = () => {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return structuredClone(DEFAULT_STATE);
+      if (!raw) {
+        // Migration check: If v1 exists, we could migrate, but for this exercise we start fresh v2
+        return structuredClone(DEFAULT_STATE);
+      }
       try {
-        return { ...structuredClone(DEFAULT_STATE), ...JSON.parse(raw) };
+        const parsed = JSON.parse(raw);
+        // Merge with defaults to ensure structure integrity
+        return { ...structuredClone(DEFAULT_STATE), ...parsed };
       } catch (err) {
         return structuredClone(DEFAULT_STATE);
       }
@@ -316,102 +574,345 @@
       catOrb.classList.add('level-up');
     };
 
+    const getLast7Days = () => {
+      const dates = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dates.push(d.toISOString().split('T')[0]);
+      }
+      return dates;
+    };
+
+    const calculateIdentityScore = (identityId) => {
+      const habits = state.habits.filter(h => h.category === identityId && !h.archived);
+      if (habits.length === 0) return 0;
+
+      const last7Days = getLast7Days();
+      let totalPoints = 0;
+      let maxPoints = habits.length * 7;
+
+      habits.forEach(habit => {
+        last7Days.forEach(date => {
+          const status = habit.history[date];
+          if (status === 'full') totalPoints += 1;
+          else if (status === 'emergency') totalPoints += 0.5;
+        });
+      });
+
+      return Math.round((totalPoints / maxPoints) * 100) || 0;
+    };
+
     const renderStats = () => {
-      statsEl.innerHTML = state.stats.map((stat, index) => {
+      statsEl.innerHTML = state.identities.map((identity, index) => {
+        const score = calculateIdentityScore(identity.id);
+        const level = Math.floor(score / 20) + 1; // 1 to 5+
+
         return `
-          <div class="glass-orb rounded-[32px] p-5 flex-1 min-w-[260px] hud-panel">
+          <div class="glass-orb rounded-[32px] p-5 flex-1 min-w-[260px] hud-panel" style="border-top: 2px solid ${identity.color}40">
             <div class="flex items-center justify-between mb-3">
-              <span class="text-xs uppercase hud-label text-slate-400">XP Channel</span>
-              <div class="flex gap-2">
-                <button class="xp-btn minus px-2 py-1 rounded-full border border-white/10 text-slate-300" data-index="${index}" data-action="minus">-</button>
-                <button class="xp-btn plus px-2 py-1 rounded-full border border-violet-400/60 text-violet-200" data-index="${index}" data-action="plus">+</button>
-              </div>
+              <span class="text-xs uppercase hud-label text-slate-400">Identity Protocol</span>
+              <span class="text-xs text-slate-500">Lv. ${level}</span>
             </div>
             <div class="flex items-center justify-between">
-              <h3 class="font-display text-2xl" contenteditable="true" data-index="${index}">${stat.name}</h3>
-              <span class="text-sm text-slate-300">${stat.value}%</span>
+              <h3 class="font-display text-2xl" style="color:${identity.color}">${escapeHtml(identity.name)}</h3>
+              <span class="text-sm text-slate-300">${score}% Consistency</span>
             </div>
             <div class="xp-bar mt-4">
-              <div class="xp-fill" style="width: ${stat.value}%"></div>
+              <div class="xp-fill" style="width: ${score}%; background: ${identity.color}; box-shadow: 0 0 16px ${identity.color}60"></div>
             </div>
           </div>
         `;
       }).join('');
     };
 
+    const getTodayKey = () => new Date().toISOString().split('T')[0];
+
     const renderQuests = () => {
-      questListEl.innerHTML = state.quests.map((quest, index) => {
+      const today = getTodayKey();
+      const activeHabits = state.habits.filter(h => !h.archived);
+
+      if (activeHabits.length === 0) {
+        questListEl.innerHTML = `<div class="text-center text-slate-500 py-10">No active habits. <br>Click 'Add' to design a new one.</div>`;
+        return;
+      }
+
+      questListEl.innerHTML = activeHabits.map(habit => {
+        const status = habit.history[today]; // 'full', 'emergency', 'missed' or undefined
+        const identity = state.identities.find(id => id.id === habit.category);
+        const color = identity ? identity.color : '#fff';
+        const safeTitle = escapeHtml(habit.title);
+
+        let content = '';
+        let cardClass = '';
+
+        if (status === 'full') {
+          cardClass = 'done-full';
+          content = `
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-medium text-lg text-white">${safeTitle}</h3>
+                <p class="text-xs text-violet-300 tracking-wider uppercase">Completed</p>
+              </div>
+              <div class="text-violet-400 text-xl">✔</div>
+            </div>
+          `;
+        } else if (status === 'emergency') {
+          cardClass = 'done-emergency';
+          content = `
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-medium text-lg text-white">${safeTitle}</h3>
+                <p class="text-xs text-amber-300 tracking-wider uppercase">Emergency Drill</p>
+              </div>
+              <div class="text-amber-400 text-xl">⚠</div>
+            </div>
+          `;
+        } else if (status === 'missed') {
+          cardClass = 'missed';
+          content = `
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-medium text-lg text-slate-400 line-through">${safeTitle}</h3>
+                <p class="text-xs text-red-300 tracking-wider uppercase">Missed</p>
+              </div>
+              <div class="text-red-400 text-xl">✕</div>
+            </div>
+          `;
+        } else {
+          // Pending state
+          content = `
+            <div class="flex flex-col gap-3">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="font-medium text-lg text-white">${safeTitle}</h3>
+                  <p class="text-xs text-slate-400 mt-1">When: ${escapeHtml(habit.trigger)}</p>
+                </div>
+                <div class="w-2 h-2 rounded-full" style="background:${color}; box-shadow: 0 0 10px ${color}"></div>
+              </div>
+
+              <div class="action-row flex gap-3 mt-2" id="actions-${habit.id}">
+                <button class="btn-action btn-primary flex-1" onclick="markHabit('${habit.id}', 'full')">Complete</button>
+                <button class="btn-action btn-secondary" onclick="showStruggle('${habit.id}')">Struggle?</button>
+              </div>
+
+              <div class="struggle-row hidden flex-col gap-2 mt-2" id="struggle-${habit.id}">
+                <p class="text-xs text-slate-400 mb-1">Emergency Protocol: <span class="text-white">${escapeHtml(habit.emergency)}</span></p>
+                <div class="flex gap-2">
+                  <button class="btn-action btn-emergency flex-1" onclick="markHabit('${habit.id}', 'emergency')">Do Min. Viable</button>
+                  <button class="btn-action btn-missed" onclick="promptFriction('${habit.id}')">Log Miss</button>
+                </div>
+                <button class="text-xs text-slate-500 hover:text-red-400 mt-2 self-start" onclick="retireHabit('${habit.id}')">Retire this habit</button>
+              </div>
+            </div>
+          `;
+        }
+
         return `
-          <div class="flex items-center gap-3">
-            <input type="checkbox" class="checkbox-glow" data-index="${index}" ${quest.done ? 'checked' : ''}>
-            <input type="text" class="flex-1 bg-transparent border-b border-white/10 focus:border-violet-400/70 text-sm text-slate-200" value="${quest.text}" data-index="${index}">
+          <div class="habit-card ${cardClass}" style="border-left: 3px solid ${color}">
+            ${content}
           </div>
         `;
       }).join('');
+    };
+
+    window.markHabit = (id, status) => {
+      const today = getTodayKey();
+      const habit = state.habits.find(h => h.id === id);
+      if (habit) {
+        habit.history[today] = status;
+        saveState();
+        renderQuests();
+        renderStats();
+        if (status === 'full' || status === 'emergency') triggerConfetti();
+      }
+    };
+
+    window.showStruggle = (id) => {
+      document.getElementById(`actions-${id}`).classList.add('hidden');
+      document.getElementById(`struggle-${id}`).classList.remove('hidden');
+      document.getElementById(`struggle-${id}`).classList.add('flex');
+    };
+
+    window.promptFriction = (id) => {
+      frictionModal.open(id);
+    };
+
+    window.retireHabit = (id) => {
+      if (confirm('Retire this habit? It will be archived and removed from your daily view.')) {
+        const habit = state.habits.find(h => h.id === id);
+        if (habit) {
+          habit.archived = true;
+          saveState();
+          renderAll();
+        }
+      }
+    };
+
+    const reviewModal = {
+      el: document.getElementById('reviewModal'),
+      frictionStats: document.getElementById('frictionStats'),
+      habitHealth: document.getElementById('habitHealth'),
+
+      open() {
+        this.render();
+        this.el.classList.add('open');
+      },
+
+      render() {
+        // Calculate Friction
+        const tagCounts = {};
+        state.habits.forEach(h => {
+          // Include archived habits in friction stats for learning
+          h.friction_log.forEach(entry => {
+            entry.reasons.forEach(tag => {
+              tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            });
+          });
+        });
+
+        const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+
+        if (sortedTags.length === 0) {
+          this.frictionStats.innerHTML = '<p class="text-sm text-slate-500">No friction recorded yet.</p>';
+        } else {
+          this.frictionStats.innerHTML = sortedTags.map(([tag, count]) => `
+            <div class="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+              <span class="text-sm text-slate-200">${escapeHtml(tag)}</span>
+              <span class="text-xs text-violet-400 font-mono">${count}</span>
+            </div>
+          `).join('');
+        }
+
+        // Calculate Habit Health (Misses in last 7 days) - Only active habits
+        const last7 = getLast7Days();
+        const activeHabits = state.habits.filter(h => !h.archived);
+
+        this.habitHealth.innerHTML = activeHabits.map(h => {
+          let misses = 0;
+          last7.forEach(d => { if(h.history[d] === 'missed') misses++; });
+
+          if (misses === 0) return '';
+
+          return `
+            <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+              <span class="text-sm text-slate-300">${escapeHtml(h.title)}</span>
+              <span class="text-xs text-red-400">${misses} misses / 7d</span>
+            </div>
+          `;
+        }).filter(Boolean).join('') || '<p class="text-sm text-slate-500">All systems nominal.</p>';
+      }
+    };
+
+    document.getElementById('reviewBtn').addEventListener('click', () => {
+      reviewModal.open();
+    });
+
+    const frictionModal = {
+      el: document.getElementById('frictionModal'),
+      currentHabitId: null,
+      selectedTags: [],
+
+      open(id) {
+        this.currentHabitId = id;
+        this.selectedTags = [];
+        this.el.classList.add('open');
+        this.el.querySelectorAll('.friction-tag').forEach(t => t.classList.remove('selected'));
+        document.getElementById('frictionNotes').value = '';
+      },
+
+      close() {
+        this.el.classList.remove('open');
+      },
+
+      toggleTag(btn) {
+        btn.classList.toggle('selected');
+        const tag = btn.textContent;
+        if (this.selectedTags.includes(tag)) {
+          this.selectedTags = this.selectedTags.filter(t => t !== tag);
+        } else {
+          this.selectedTags.push(tag);
+        }
+      },
+
+      save() {
+        const today = getTodayKey();
+        const habit = state.habits.find(h => h.id === this.currentHabitId);
+        if (habit) {
+          habit.history[today] = 'missed';
+          habit.friction_log.push({
+            date: today,
+            reasons: this.selectedTags,
+            notes: document.getElementById('frictionNotes').value
+          });
+          saveState();
+          renderQuests();
+          renderStats();
+        }
+        this.close();
+      }
+    };
+
+    const modal = {
+      el: document.getElementById('habitModal'),
+      category: document.getElementById('habitCategory'),
+      title: document.getElementById('habitTitle'),
+      trigger: document.getElementById('habitTrigger'),
+      emergency: document.getElementById('habitEmergency'),
+      cancelBtn: document.getElementById('cancelHabit'),
+      saveBtn: document.getElementById('saveHabit'),
+
+      open() {
+        this.category.innerHTML = state.identities.map(id =>
+          `<option value="${id.id}">${id.name}</option>`
+        ).join('');
+        this.title.value = '';
+        this.trigger.value = '';
+        this.emergency.value = '';
+        this.el.classList.add('open');
+      },
+
+      close() {
+        this.el.classList.remove('open');
+      },
+
+      save() {
+        const title = this.title.value.trim();
+        const trigger = this.trigger.value.trim();
+        if (!title) return alert('What is the habit?');
+
+        state.habits.push({
+          id: generateId(),
+          title,
+          trigger: trigger || 'Daily',
+          emergency: this.emergency.value.trim() || title, // Fallback to full habit if no emergency
+          category: this.category.value,
+          history: {},
+          friction_log: []
+        });
+
+        saveState();
+        renderQuests();
+        renderStats();
+        this.close();
+      }
     };
 
     const setupEvents = () => {
-      statsEl.addEventListener('click', (event) => {
-        const btn = event.target.closest('.xp-btn');
-        if (!btn) return;
-        const index = Number(btn.dataset.index);
-        const action = btn.dataset.action;
-        const delta = action === 'plus' ? 5 : -5;
-        const nextValue = clamp(state.stats[index].value + delta, 0, 100);
-        if (nextValue > state.stats[index].value) levelUpCat();
-        state.stats[index].value = nextValue;
-        saveState();
-        renderStats();
-        setupEvents();
-      });
+      // Habit Modal
+      modal.cancelBtn.onclick = () => modal.close();
+      modal.saveBtn.onclick = () => modal.save();
+      modal.el.addEventListener('click', (e) => { if (e.target === modal.el) modal.close(); });
 
-      statsEl.querySelectorAll('[contenteditable="true"]').forEach((el) => {
-        el.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            el.blur();
-          }
-        });
-        el.addEventListener('blur', () => {
-          const index = Number(el.dataset.index);
-          const value = el.textContent.trim() || DEFAULT_STATE.stats[index]?.name || 'XP';
-          state.stats[index].name = value;
-          saveState();
-          renderStats();
-          setupEvents();
-        });
-      });
+      // Friction Modal
+      frictionModal.el.addEventListener('click', (e) => { if (e.target === frictionModal.el) frictionModal.close(); });
 
-      questListEl.querySelectorAll('input[type="text"]').forEach((input) => {
-        input.addEventListener('input', () => {
-          const index = Number(input.dataset.index);
-          state.quests[index].text = input.value;
-          saveState();
-        });
-      });
-
-      questListEl.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
-        checkbox.addEventListener('change', () => {
-          const index = Number(checkbox.dataset.index);
-          const wasDone = state.quests[index].done;
-          state.quests[index].done = checkbox.checked;
-          saveState();
-          if (!wasDone && checkbox.checked) {
-            triggerConfetti();
-          }
-        });
-      });
+      // Review Modal
+      reviewModal.el.addEventListener('click', (e) => { if (e.target === reviewModal.el) reviewModal.el.classList.remove('open'); });
     };
 
     document.getElementById('addQuest').addEventListener('click', () => {
-      state.quests.push({ text: 'New quest', done: false });
-      saveState();
-      renderQuests();
-      setupEvents();
-    });
-
-    const pawShape = confetti.shapeFromPath({
-      path: 'M25 10c-3 0-5 2.5-5 5.5 0 2.8 1.8 5 4.5 5 2.8 0 4.5-2.2 4.5-5 0-3-2-5.5-4-5.5zm14 2c-2.6 0-4.2 2.2-4.2 5 0 2.6 1.6 4.8 3.8 4.8 2.5 0 4.2-2.2 4.2-5 0-2.6-1.5-4.8-3.8-4.8zm-30 0c-2.3 0-3.8 2.2-3.8 4.8 0 2.8 1.7 5 4.2 5 2.2 0 3.8-2.2 3.8-4.8 0-2.8-1.6-5-4.2-5zm16 12c-7 0-13 4-13 9.5 0 4.2 4.4 6.5 13 6.5s13-2.3 13-6.5c0-5.5-6-9.5-13-9.5z'
+      modal.open();
     });
 
     const triggerConfetti = () => {
@@ -419,7 +920,7 @@
         particleCount: 60,
         spread: 70,
         scalar: 0.8,
-        shapes: [pawShape, 'circle'],
+        shapes: ['circle', 'square'],
         colors: ['#8B5CF6', '#C4B5FD', '#A78BFA'],
         origin: { x: 0.5, y: 0.7 }
       });
@@ -486,11 +987,13 @@
 
     renderAll();
 
-    const { animate } = window.framerMotion;
-    animate('.hud-panel', { opacity: [0, 1], y: [20, 0] }, { duration: 0.9, delay: 0.1, type: 'spring' });
-    animate('#questPanel', { opacity: [0, 1], x: [-30, 0] }, { duration: 1, delay: 0.2, type: 'spring' });
-    animate('#timerPanel', { opacity: [0, 1], x: [30, 0] }, { duration: 1, delay: 0.2, type: 'spring' });
-    animate('#catOrb', { opacity: [0, 1], scale: [0.9, 1] }, { duration: 1.2, delay: 0.3, type: 'spring' });
+    if (window.framerMotion) {
+      const { animate } = window.framerMotion;
+      animate('.hud-panel', { opacity: [0, 1], y: [20, 0] }, { duration: 0.9, delay: 0.1, type: 'spring' });
+      animate('#questPanel', { opacity: [0, 1], x: [-30, 0] }, { duration: 1, delay: 0.2, type: 'spring' });
+      animate('#timerPanel', { opacity: [0, 1], x: [30, 0] }, { duration: 1, delay: 0.2, type: 'spring' });
+      animate('#catOrb', { opacity: [0, 1], scale: [0.9, 1] }, { duration: 1.2, delay: 0.3, type: 'spring' });
+    }
 
     const canvas = document.getElementById('starfield');
     const ctx = canvas.getContext('2d');
