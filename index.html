@@ -3,352 +3,532 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Habit Tracker — Obsidian Edition</title>
+  <title>Neko-Quest — Universal Gamified Productivity HUD</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { inter: ['Inter', 'ui-sans-serif', 'system-ui'] }
+          fontFamily: {
+            display: ['"Playfair Display"', 'ui-serif', 'Georgia'],
+            inter: ['Inter', 'ui-sans-serif', 'system-ui']
+          },
+          colors: {
+            violet: {
+              glow: '#8B5CF6'
+            }
+          }
         }
       }
     }
   </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://unpkg.com/framer-motion/dist/framer-motion.umd.js"></script>
 
   <style>
     :root{
-      --bg:#0b0b0d;
-      --card:rgba(18, 18, 18, 0.7);
-      --border:rgba(255, 255, 255, 0.08);
-      --accent:#00f5ff;
-      --muted:#8b8b93;
+      --bg:#050505;
+      --glass:rgba(12, 12, 16, 0.55);
+      --glow:#8B5CF6;
+      --outline:rgba(139, 92, 246, 0.35);
+      --text:rgba(241, 245, 249, 0.95);
     }
 
-    *{
-      -webkit-font-smoothing: antialiased;
-    }
+    *{ -webkit-font-smoothing: antialiased; }
 
     body{
-      scroll-snap-type: y mandatory;
-      background: radial-gradient(circle at top, rgba(0,245,255,0.08), transparent 40%), var(--bg);
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
     }
 
-    .snap-section{
-      scroll-snap-align: start;
-      scroll-margin-top: 24px;
+    #starfield{
+      position: fixed;
+      inset: 0;
+      z-index: 0;
     }
 
-    .glass-card{
-      background: var(--card);
-      border: 1px solid var(--border);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
+    .glass-orb{
+      background: radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.25), transparent 55%),
+        linear-gradient(140deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+      background-color: var(--glass);
+      border: 1px solid var(--outline);
+      box-shadow: 0 0 45px rgba(139, 92, 246, 0.25), inset 0 0 24px rgba(139, 92, 246, 0.15);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
 
-    .tile{
-      transition: transform 0.25s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+    .orb-float{
+      animation: float 8s ease-in-out infinite;
     }
 
-    .tile:hover{
-      transform: scale(1.03);
+    @keyframes float{
+      0%,100%{ transform: translateY(0px); }
+      50%{ transform: translateY(-12px); }
     }
 
-    .tile:active{
-      transform: scale(0.98);
+    .xp-bar{
+      height: 14px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
     }
 
-    .tile.is-complete{
-      box-shadow: 0 0 30px rgba(0,245,255,0.28), 0 0 0 1px rgba(0,245,255,0.3);
+    .xp-fill{
+      height: 100%;
+      background: linear-gradient(90deg, rgba(139,92,246,0.9), rgba(196,181,253,0.95));
+      box-shadow: 0 0 16px rgba(139,92,246,0.6);
+      transition: width 0.4s ease;
     }
 
-    .tile.is-complete .tile-title,
-    .tile.is-complete .tile-meta{
-      color: rgba(226,232,240,0.6);
+    .cat-orb{
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      position: relative;
+      overflow: hidden;
     }
 
-    .tile.is-complete .tile-status{
-      color: rgba(0,245,255,0.75);
+    .cat-silhouette{
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(180deg, rgba(139,92,246,0.9), rgba(59,7,100,0.9));
+      border-radius: 45% 45% 40% 40%;
+      position: relative;
+      animation: breathe 5s ease-in-out infinite;
+      box-shadow: 0 0 25px rgba(139,92,246,0.6);
     }
 
-    .reveal{
-      opacity: 0;
-      transform: translateY(24px);
+    .cat-ear{
+      width: 38px;
+      height: 38px;
+      background: inherit;
+      position: absolute;
+      top: -16px;
+      border-radius: 6px 6px 0 0;
+      transform: rotate(45deg);
     }
 
-    .reveal.is-visible{
-      opacity: 1;
-      transform: translateY(0);
+    .cat-ear.right{ right: 10px; }
+    .cat-ear.left{ left: 10px; }
+
+    .cat-orb.level-up{
+      animation: levelUp 1s ease;
     }
 
-    .bento-grid{
+    @keyframes breathe{
+      0%,100%{ transform: scale(1); }
+      50%{ transform: scale(1.05); }
+    }
+
+    @keyframes levelUp{
+      0%{ transform: scale(1); box-shadow: 0 0 25px rgba(139,92,246,0.5); }
+      50%{ transform: scale(1.08); box-shadow: 0 0 45px rgba(139,92,246,0.95); }
+      100%{ transform: scale(1); box-shadow: 0 0 25px rgba(139,92,246,0.5); }
+    }
+
+    .checkbox-glow{
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 1px solid rgba(139,92,246,0.6);
+      border-radius: 6px;
+      position: relative;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      grid-auto-rows: 160px;
-      gap: 18px;
-      grid-auto-flow: dense;
+      place-items: center;
+      background: rgba(255,255,255,0.05);
+      box-shadow: 0 0 12px rgba(139,92,246,0.25);
     }
 
-    .tile--wide{
-      grid-column: span 2;
+    .checkbox-glow:checked{
+      background: rgba(139,92,246,0.9);
+      box-shadow: 0 0 18px rgba(139,92,246,0.7);
     }
 
-    .progress-ring{
-      stroke: rgba(0,245,255,0.9);
-      filter: drop-shadow(0 0 12px rgba(0,245,255,0.35));
-      transition: stroke-dashoffset 0.6s cubic-bezier(.2,.8,.2,1);
+    .checkbox-glow:checked::after{
+      content: '✔';
+      font-size: 12px;
+      color: #050505;
     }
 
-    .progress-track{
-      stroke: rgba(148,163,184,0.15);
+    .timer-ring{
+      width: 180px;
+      height: 180px;
+      border-radius: 999px;
+      background: conic-gradient(#8B5CF6 0deg, rgba(255,255,255,0.1) 0deg 360deg);
+      display: grid;
+      place-items: center;
+      position: relative;
+      box-shadow: 0 0 40px rgba(139,92,246,0.45);
+    }
+
+    .timer-ring::after{
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border-radius: 999px;
+      background: rgba(5,5,5,0.85);
+      border: 1px solid rgba(139,92,246,0.35);
+      box-shadow: inset 0 0 24px rgba(139,92,246,0.25);
+    }
+
+    .timer-content{
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 0 18px rgba(139,92,246,0.6);
+    }
+
+    .hud-label{
+      letter-spacing: 0.4em;
+    }
+
+    .floating-light{
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(139,92,246,0.2);
+      filter: blur(40px);
+      z-index: 1;
+      animation: drift 12s ease-in-out infinite;
+    }
+
+    @keyframes drift{
+      0%,100%{ transform: translateY(0px) translateX(0px); }
+      50%{ transform: translateY(-40px) translateX(20px); }
+    }
+
+    [contenteditable="true"]:focus{
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(139,92,246,0.5);
+      border-radius: 6px;
     }
   </style>
 </head>
+<body class="font-inter">
+  <canvas id="starfield"></canvas>
+  <div class="floating-light w-80 h-80 top-10 left-10"></div>
+  <div class="floating-light w-96 h-96 bottom-20 right-10"></div>
 
-<body class="font-inter text-slate-100 selection:bg-[var(--accent)]/30">
-  <main class="max-w-6xl mx-auto px-4 py-10 space-y-10">
-    <section class="snap-section glass-card rounded-3xl p-6 sm:p-8">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p class="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">Habit Tracker</p>
-          <h1 class="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">Obsidian Momentum Console</h1>
-          <p class="mt-2 text-sm text-slate-400">Minimal interface. Maximum follow-through.</p>
-        </div>
-        <div class="glass-card rounded-2xl px-4 py-3 flex items-center gap-4">
-          <div class="text-right">
-            <p class="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">Progress Gauge</p>
-            <p class="text-lg font-semibold" id="progressLabel">0% Complete</p>
-          </div>
-          <div class="relative w-20 h-20">
-            <svg width="80" height="80" viewBox="0 0 120 120">
-              <circle class="progress-track" cx="60" cy="60" r="46" stroke-width="10" fill="none"></circle>
-              <circle class="progress-ring" cx="60" cy="60" r="46" stroke-width="10" fill="none"
-                      stroke-linecap="round" transform="rotate(-90 60 60)" id="progressRing"></circle>
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center text-lg font-semibold" id="progressPct">0%</div>
-          </div>
-        </div>
+  <main class="relative z-10 min-h-screen px-6 py-10 flex flex-col items-center gap-10">
+    <header class="text-center space-y-2">
+      <p class="text-xs uppercase hud-label text-slate-400">Universal Gamified Productivity HUD</p>
+      <h1 class="font-display text-4xl sm:text-5xl text-white">Neko-Quest</h1>
+      <p class="text-sm text-slate-400 max-w-xl mx-auto">Rename your XP channels, log daily quests, and let your guardian cat celebrate your level-ups.</p>
+    </header>
+
+    <section class="w-full max-w-5xl flex flex-col gap-4">
+      <div id="stats" class="flex flex-col lg:flex-row gap-4 justify-center">
+        <!-- Stat bars injected here -->
       </div>
     </section>
 
-    <section class="snap-section">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <p class="text-xs uppercase tracking-[0.35em] text-[var(--muted)]">Daily Habits</p>
-          <h2 class="text-xl font-semibold tracking-tight">Bento Habit Grid</h2>
+    <section class="w-full max-w-6xl flex flex-col lg:flex-row gap-8 items-stretch justify-center">
+      <div class="glass-orb orb-float rounded-[40px] p-6 flex-1 min-w-[280px]" id="questPanel">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <p class="text-xs uppercase hud-label text-slate-400">Quest Log</p>
+            <h2 class="font-display text-2xl">Daily Quests</h2>
+          </div>
+          <button id="addQuest" class="px-3 py-1 text-xs uppercase tracking-[0.3em] rounded-full border border-violet-400/40 text-violet-200">Add</button>
         </div>
-        <button id="completeAllBtn" class="glass-card rounded-xl px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 hover:text-white transition">Complete All</button>
-      </div>
-      <div id="habitGrid" class="bento-grid"></div>
-    </section>
-
-    <section class="snap-section glass-card rounded-3xl p-6 sm:p-8">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p class="text-xs uppercase tracking-[0.35em] text-[var(--muted)]">Momentum</p>
-          <h2 class="text-xl font-semibold tracking-tight">Consistency Graph</h2>
-          <p class="mt-1 text-sm text-slate-400">Weekly signal of habit adherence.</p>
-        </div>
-        <div class="glass-card rounded-2xl px-4 py-3 flex items-center gap-2">
-          <span class="h-2 w-2 rounded-full bg-[var(--accent)]"></span>
-          <span class="text-xs uppercase tracking-[0.3em] text-slate-300">Pulse</span>
-        </div>
+        <div id="questList" class="space-y-3"></div>
       </div>
 
-      <div class="mt-4 glass-card rounded-2xl p-4">
-        <canvas id="momentumChart" height="120"></canvas>
+      <div class="flex flex-col items-center justify-center gap-6 flex-1 min-w-[280px]">
+        <div class="glass-orb cat-orb orb-float flex items-center justify-center" id="catOrb">
+          <div class="cat-silhouette">
+            <span class="cat-ear left"></span>
+            <span class="cat-ear right"></span>
+          </div>
+        </div>
+        <p class="text-sm text-slate-300">Guardian Cat • Level synced to your XP</p>
+      </div>
+
+      <div class="glass-orb rounded-[40px] p-6 flex-1 min-w-[280px]" id="timerPanel">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <p class="text-xs uppercase hud-label text-slate-400">Holographic Timer</p>
+            <h2 class="font-display text-2xl">Pomodoro Core</h2>
+          </div>
+        </div>
+        <div class="flex flex-col items-center gap-4">
+          <div class="timer-ring" id="timerRing">
+            <div class="timer-content text-center">
+              <p class="text-xs uppercase hud-label text-slate-400">Focus</p>
+              <p id="timerDisplay" class="text-3xl font-semibold">25:00</p>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <button id="timerToggle" class="px-4 py-2 rounded-full text-xs uppercase tracking-[0.3em] border border-violet-400/50 text-violet-200">Start</button>
+            <button id="timerReset" class="px-4 py-2 rounded-full text-xs uppercase tracking-[0.3em] border border-white/10 text-slate-300">Reset</button>
+          </div>
+        </div>
       </div>
     </section>
   </main>
 
   <script>
-    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-    const $  = (sel, root=document) => root.querySelector(sel);
-
-    const STORAGE_KEY = "habit_obsidian_v1";
-
-    const defaultState = {
-      habits: [
-        { id: "ritual", title: "Morning Ritual", detail: "Breathwork + journal", time: "06:30", icon: "sunrise", size: "wide", done: false },
-        { id: "deep", title: "Deep Focus", detail: "2 x 50 min sprints", time: "09:00", icon: "brain", size: "wide", done: false },
-        { id: "lift", title: "Strength", detail: "PPL cycle", time: "12:30", icon: "dumbbell", size: "single", done: false },
-        { id: "walk", title: "Recovery Walk", detail: "20 min outdoors", time: "15:00", icon: "footprints", size: "single", done: false },
-        { id: "hydrate", title: "Hydration", detail: "3L target", time: "All day", icon: "droplets", size: "single", done: false },
-        { id: "read", title: "Skill Reading", detail: "30 min", time: "20:00", icon: "book-open", size: "single", done: false },
-        { id: "shutdown", title: "Night Shutdown", detail: "Plan tomorrow", time: "22:00", icon: "moon", size: "wide", done: false }
+    const STORAGE_KEY = 'neko_quest_state_v1';
+    const DEFAULT_STATE = {
+      stats: [
+        { name: 'Fitness', value: 60 },
+        { name: 'Study', value: 40 },
+        { name: 'Coding', value: 75 }
+      ],
+      quests: [
+        { text: 'Plan top 3 priorities', done: false },
+        { text: 'Complete a focused sprint', done: false },
+        { text: 'Hydrate + stretch', done: false }
       ]
     };
 
-    function loadState(){
+    const clamp = (num, min, max) => Math.max(min, Math.min(max, num));
+
+    const loadState = () => {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return structuredClone(defaultState);
-      return { ...structuredClone(defaultState), ...JSON.parse(raw) };
-    }
+      if (!raw) return structuredClone(DEFAULT_STATE);
+      try {
+        return { ...structuredClone(DEFAULT_STATE), ...JSON.parse(raw) };
+      } catch (err) {
+        return structuredClone(DEFAULT_STATE);
+      }
+    };
 
-    function saveState(){
+    const state = loadState();
+
+    const saveState = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
+    };
 
-    let state = loadState();
+    const statsEl = document.getElementById('stats');
+    const questListEl = document.getElementById('questList');
+    const catOrb = document.getElementById('catOrb');
 
-    const RING_RADIUS = 46;
-    const CIRC = 2 * Math.PI * RING_RADIUS;
+    const levelUpCat = () => {
+      catOrb.classList.remove('level-up');
+      void catOrb.offsetWidth;
+      catOrb.classList.add('level-up');
+    };
 
-    function renderProgress(){
-      const total = state.habits.length;
-      const done = state.habits.filter(h => h.done).length;
-      const pct = total ? Math.round((done / total) * 100) : 0;
-
-      const ring = $("#progressRing");
-      ring.style.strokeDasharray = `${CIRC} ${CIRC}`;
-      ring.style.strokeDashoffset = `${CIRC - (pct/100) * CIRC}`;
-
-      $("#progressPct").textContent = `${pct}%`;
-      $("#progressLabel").textContent = `${pct}% Complete`;
-    }
-
-    function habitTileTemplate(habit, index){
-      const sizeClass = habit.size === "wide" ? "tile--wide" : "";
-      const statusText = habit.done ? "Complete" : "Pending";
-
-      return `
-        <button class="tile reveal glass-card rounded-3xl p-5 flex flex-col justify-between ${sizeClass} ${habit.done ? "is-complete" : ""}"
-                data-id="${habit.id}" data-index="${index}">
-          <div class="flex items-start justify-between gap-2">
-            <div>
-              <p class="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">${habit.time}</p>
-              <h3 class="tile-title mt-2 text-lg font-semibold">${habit.title}</h3>
-              <p class="tile-meta mt-1 text-sm text-slate-400">${habit.detail}</p>
+    const renderStats = () => {
+      statsEl.innerHTML = state.stats.map((stat, index) => {
+        return `
+          <div class="glass-orb rounded-[32px] p-5 flex-1 min-w-[260px] hud-panel">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs uppercase hud-label text-slate-400">XP Channel</span>
+              <div class="flex gap-2">
+                <button class="xp-btn minus px-2 py-1 rounded-full border border-white/10 text-slate-300" data-index="${index}" data-action="minus">-</button>
+                <button class="xp-btn plus px-2 py-1 rounded-full border border-violet-400/60 text-violet-200" data-index="${index}" data-action="plus">+</button>
+              </div>
             </div>
-            <div class="h-10 w-10 rounded-2xl border border-white/10 bg-black/30 flex items-center justify-center">
-              <i data-lucide="${habit.icon}" class="h-5 w-5 ${habit.done ? "text-[var(--accent)]" : "text-slate-300"}"></i>
+            <div class="flex items-center justify-between">
+              <h3 class="font-display text-2xl" contenteditable="true" data-index="${index}">${stat.name}</h3>
+              <span class="text-sm text-slate-300">${stat.value}%</span>
+            </div>
+            <div class="xp-bar mt-4">
+              <div class="xp-fill" style="width: ${stat.value}%"></div>
             </div>
           </div>
-          <div class="flex items-center justify-between">
-            <span class="tile-status text-xs uppercase tracking-[0.3em] ${habit.done ? "text-[var(--accent)]" : "text-slate-400"}">${statusText}</span>
-            <span class="text-xs text-slate-500">Tap to toggle</span>
+        `;
+      }).join('');
+    };
+
+    const renderQuests = () => {
+      questListEl.innerHTML = state.quests.map((quest, index) => {
+        return `
+          <div class="flex items-center gap-3">
+            <input type="checkbox" class="checkbox-glow" data-index="${index}" ${quest.done ? 'checked' : ''}>
+            <input type="text" class="flex-1 bg-transparent border-b border-white/10 focus:border-violet-400/70 text-sm text-slate-200" value="${quest.text}" data-index="${index}">
           </div>
-        </button>
-      `;
-    }
+        `;
+      }).join('');
+    };
 
-    function renderHabits(){
-      const grid = $("#habitGrid");
-      grid.innerHTML = state.habits.map(habitTileTemplate).join("");
-      lucide.createIcons();
-      setupReveal();
-    }
-
-    function toggleHabit(id){
-      const habit = state.habits.find(h => h.id === id);
-      if(!habit) return;
-      habit.done = !habit.done;
-      saveState();
-      renderHabits();
-      renderProgress();
-    }
-
-    $("#habitGrid").addEventListener("click", (e) => {
-      const tile = e.target.closest(".tile");
-      if(!tile) return;
-      toggleHabit(tile.dataset.id);
-    });
-
-    $("#completeAllBtn").addEventListener("click", () => {
-      state.habits = state.habits.map(h => ({ ...h, done: true }));
-      saveState();
-      renderHabits();
-      renderProgress();
-    });
-
-    function setupReveal(){
-      const tiles = $$(".reveal");
-      tiles.forEach((tile, index) => {
-        tile.style.transitionDelay = `${index * 50}ms`;
+    const setupEvents = () => {
+      statsEl.addEventListener('click', (event) => {
+        const btn = event.target.closest('.xp-btn');
+        if (!btn) return;
+        const index = Number(btn.dataset.index);
+        const action = btn.dataset.action;
+        const delta = action === 'plus' ? 5 : -5;
+        const nextValue = clamp(state.stats[index].value + delta, 0, 100);
+        if (nextValue > state.stats[index].value) levelUpCat();
+        state.stats[index].value = nextValue;
+        saveState();
+        renderStats();
+        setupEvents();
       });
 
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if(entry.isIntersecting){
-            entry.target.classList.add("is-visible");
-            observer.unobserve(entry.target);
+      statsEl.querySelectorAll('[contenteditable="true"]').forEach((el) => {
+        el.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            el.blur();
           }
         });
-      }, { threshold: 0.2 });
-
-      tiles.forEach(tile => observer.observe(tile));
-    }
-
-    let chart;
-    function renderChart(){
-      const ctx = $("#momentumChart");
-      const labels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-      const data = [64, 70, 66, 78, 82, 80, 88];
-
-      if(chart) chart.destroy();
-
-      chart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [{
-            label: "Consistency",
-            data,
-            borderColor: "rgba(0,245,255,0.9)",
-            backgroundColor: "rgba(0,245,255,0.12)",
-            fill: true,
-            tension: 0.35,
-            borderWidth: 2,
-            pointRadius: 3,
-            pointHoverRadius: 5,
-            pointBackgroundColor: "rgba(0,245,255,0.9)"
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: "rgba(12,12,14,0.95)",
-              borderColor: "rgba(255,255,255,0.08)",
-              borderWidth: 1,
-              titleColor: "rgba(226,232,240,1)",
-              bodyColor: "rgba(226,232,240,0.9)",
-              displayColors: false
-            }
-          },
-          scales: {
-            x: {
-              grid: { color: "rgba(255,255,255,0.05)" },
-              ticks: { color: "rgba(148,163,184,0.85)" }
-            },
-            y: {
-              suggestedMin: 40,
-              suggestedMax: 100,
-              grid: { color: "rgba(255,255,255,0.05)" },
-              ticks: { color: "rgba(148,163,184,0.85)" }
-            }
-          }
-        }
+        el.addEventListener('blur', () => {
+          const index = Number(el.dataset.index);
+          const value = el.textContent.trim() || DEFAULT_STATE.stats[index]?.name || 'XP';
+          state.stats[index].name = value;
+          saveState();
+          renderStats();
+          setupEvents();
+        });
       });
-    }
 
-    function renderAll(){
-      renderProgress();
-      renderHabits();
-      renderChart();
-    }
+      questListEl.querySelectorAll('input[type="text"]').forEach((input) => {
+        input.addEventListener('input', () => {
+          const index = Number(input.dataset.index);
+          state.quests[index].text = input.value;
+          saveState();
+        });
+      });
+
+      questListEl.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+        checkbox.addEventListener('change', () => {
+          const index = Number(checkbox.dataset.index);
+          const wasDone = state.quests[index].done;
+          state.quests[index].done = checkbox.checked;
+          saveState();
+          if (!wasDone && checkbox.checked) {
+            triggerConfetti();
+          }
+        });
+      });
+    };
+
+    document.getElementById('addQuest').addEventListener('click', () => {
+      state.quests.push({ text: 'New quest', done: false });
+      saveState();
+      renderQuests();
+      setupEvents();
+    });
+
+    const pawShape = confetti.shapeFromPath({
+      path: 'M25 10c-3 0-5 2.5-5 5.5 0 2.8 1.8 5 4.5 5 2.8 0 4.5-2.2 4.5-5 0-3-2-5.5-4-5.5zm14 2c-2.6 0-4.2 2.2-4.2 5 0 2.6 1.6 4.8 3.8 4.8 2.5 0 4.2-2.2 4.2-5 0-2.6-1.5-4.8-3.8-4.8zm-30 0c-2.3 0-3.8 2.2-3.8 4.8 0 2.8 1.7 5 4.2 5 2.2 0 3.8-2.2 3.8-4.8 0-2.8-1.6-5-4.2-5zm16 12c-7 0-13 4-13 9.5 0 4.2 4.4 6.5 13 6.5s13-2.3 13-6.5c0-5.5-6-9.5-13-9.5z'
+    });
+
+    const triggerConfetti = () => {
+      confetti({
+        particleCount: 60,
+        spread: 70,
+        scalar: 0.8,
+        shapes: [pawShape, 'circle'],
+        colors: ['#8B5CF6', '#C4B5FD', '#A78BFA'],
+        origin: { x: 0.5, y: 0.7 }
+      });
+    };
+
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerToggle = document.getElementById('timerToggle');
+    const timerReset = document.getElementById('timerReset');
+    const timerRing = document.getElementById('timerRing');
+
+    const TIMER_DURATION = 25 * 60;
+    let remaining = TIMER_DURATION;
+    let timerId = null;
+
+    const formatTime = (seconds) => {
+      const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${mins}:${secs}`;
+    };
+
+    const updateTimerUI = () => {
+      timerDisplay.textContent = formatTime(remaining);
+      const progress = ((TIMER_DURATION - remaining) / TIMER_DURATION) * 360;
+      timerRing.style.background = `conic-gradient(#8B5CF6 ${progress}deg, rgba(255,255,255,0.1) ${progress}deg 360deg)`;
+    };
+
+    const tickTimer = () => {
+      if (remaining <= 0) {
+        clearInterval(timerId);
+        timerId = null;
+        timerToggle.textContent = 'Start';
+        triggerConfetti();
+        return;
+      }
+      remaining -= 1;
+      updateTimerUI();
+    };
+
+    timerToggle.addEventListener('click', () => {
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+        timerToggle.textContent = 'Start';
+      } else {
+        timerId = setInterval(tickTimer, 1000);
+        timerToggle.textContent = 'Pause';
+      }
+    });
+
+    timerReset.addEventListener('click', () => {
+      clearInterval(timerId);
+      timerId = null;
+      remaining = TIMER_DURATION;
+      timerToggle.textContent = 'Start';
+      updateTimerUI();
+    });
+
+    const renderAll = () => {
+      renderStats();
+      renderQuests();
+      setupEvents();
+      updateTimerUI();
+    };
 
     renderAll();
+
+    const { animate } = window.framerMotion;
+    animate('.hud-panel', { opacity: [0, 1], y: [20, 0] }, { duration: 0.9, delay: 0.1, type: 'spring' });
+    animate('#questPanel', { opacity: [0, 1], x: [-30, 0] }, { duration: 1, delay: 0.2, type: 'spring' });
+    animate('#timerPanel', { opacity: [0, 1], x: [30, 0] }, { duration: 1, delay: 0.2, type: 'spring' });
+    animate('#catOrb', { opacity: [0, 1], scale: [0.9, 1] }, { duration: 1.2, delay: 0.3, type: 'spring' });
+
+    const canvas = document.getElementById('starfield');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      stars = Array.from({ length: 140 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.4 + 0.2,
+        speed: Math.random() * 0.4 + 0.1,
+        alpha: Math.random() * 0.7 + 0.2
+      }));
+    };
+
+    const drawStars = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+      stars.forEach((star) => {
+        star.y += star.speed;
+        if (star.y > canvas.height) {
+          star.y = 0;
+          star.x = Math.random() * canvas.width;
+        }
+        ctx.globalAlpha = star.alpha;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(drawStars);
+    };
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    drawStars();
   </script>
 </body>
 </html>
