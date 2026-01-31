@@ -7,7 +7,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -15,7 +15,7 @@
       theme: {
         extend: {
           fontFamily: {
-            display: ['"Playfair Display"', 'ui-serif', 'Georgia'],
+            display: ['"Orbitron"', 'ui-serif', 'Georgia'],
             inter: ['Inter', 'ui-sans-serif', 'system-ui']
           },
           colors: {
@@ -33,11 +33,11 @@
 
   <style>
     :root{
-      --bg:#050505;
-      --glass:rgba(12, 12, 16, 0.55);
-      --glow:#8B5CF6;
-      --outline:rgba(139, 92, 246, 0.35);
-      --text:rgba(241, 245, 249, 0.95);
+      --bg: #020205;
+      --glass: rgba(15, 23, 42, 0.4);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --glow: rgba(139, 92, 246, 0.4);
+      --text: #f8fafc;
     }
 
     *{ -webkit-font-smoothing: antialiased; }
@@ -46,22 +46,34 @@
       background: var(--bg);
       color: var(--text);
       overflow-x: hidden;
+      font-family: 'Inter', sans-serif;
     }
 
-    #starfield{
+    /* Nebula Background */
+    .nebula-bg {
       position: fixed;
       inset: 0;
-      z-index: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 15% 50%, rgba(76, 29, 149, 0.2), transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.15), transparent 40%),
+        radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.15), transparent 40%);
+      filter: blur(60px);
+      animation: nebulaPulse 15s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes nebulaPulse {
+      0% { opacity: 0.8; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.1); }
     }
 
     .glass-orb{
-      background: radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.25), transparent 55%),
-        linear-gradient(140deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
-      background-color: var(--glass);
-      border: 1px solid var(--outline);
-      box-shadow: 0 0 45px rgba(139, 92, 246, 0.25), inset 0 0 24px rgba(139, 92, 246, 0.15);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: rgba(15, 23, 42, 0.3);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .orb-float{
@@ -86,52 +98,6 @@
       background: linear-gradient(90deg, rgba(139,92,246,0.9), rgba(196,181,253,0.95));
       box-shadow: 0 0 16px rgba(139,92,246,0.6);
       transition: width 0.4s ease;
-    }
-
-    .cat-orb{
-      width: 240px;
-      height: 240px;
-      border-radius: 999px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .cat-silhouette{
-      width: 120px;
-      height: 120px;
-      background: linear-gradient(180deg, rgba(139,92,246,0.9), rgba(59,7,100,0.9));
-      border-radius: 45% 45% 40% 40%;
-      position: relative;
-      animation: breathe 5s ease-in-out infinite;
-      box-shadow: 0 0 25px rgba(139,92,246,0.6);
-    }
-
-    .cat-ear{
-      width: 38px;
-      height: 38px;
-      background: inherit;
-      position: absolute;
-      top: -16px;
-      border-radius: 6px 6px 0 0;
-      transform: rotate(45deg);
-    }
-
-    .cat-ear.right{ right: 10px; }
-    .cat-ear.left{ left: 10px; }
-
-    .cat-orb.level-up{
-      animation: levelUp 1s ease;
-    }
-
-    @keyframes breathe{
-      0%,100%{ transform: scale(1); }
-      50%{ transform: scale(1.05); }
-    }
-
-    @keyframes levelUp{
-      0%{ transform: scale(1); box-shadow: 0 0 25px rgba(139,92,246,0.5); }
-      50%{ transform: scale(1.08); box-shadow: 0 0 45px rgba(139,92,246,0.95); }
-      100%{ transform: scale(1); box-shadow: 0 0 25px rgba(139,92,246,0.5); }
     }
 
     .checkbox-glow{
@@ -228,7 +194,7 @@
     }
     .modal-content {
       background: var(--glass);
-      border: 1px solid var(--outline);
+      border: 1px solid var(--glass-border);
       box-shadow: 0 0 50px rgba(139, 92, 246, 0.2);
       border-radius: 24px;
       padding: 2rem;
@@ -368,10 +334,27 @@
     .glitch {
       animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both;
     }
+
+    /* Micro-interactions */
+    button, .friction-tag {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    button:hover, .friction-tag:hover {
+      transform: scale(1.02);
+      filter: brightness(1.2);
+    }
+    button:active {
+      transform: scale(0.95);
+    }
+
+    /* Specific overrides for circular buttons to maintain shape */
+    #timerReset:hover {
+      transform: rotate(90deg) scale(1.1);
+    }
   </style>
 </head>
 <body class="font-inter">
-  <canvas id="starfield"></canvas>
+  <div class="nebula-bg"></div>
   <div class="floating-light w-80 h-80 top-10 left-10"></div>
   <div class="floating-light w-96 h-96 bottom-20 right-10"></div>
 
@@ -495,53 +478,66 @@
       </div>
     </section>
 
-    <section class="w-full max-w-6xl flex flex-col lg:flex-row gap-8 items-stretch justify-center">
-      <div class="glass-orb orb-float rounded-[40px] p-6 flex-1 min-w-[280px]" id="questPanel">
-        <div class="flex items-center justify-between mb-4">
+    <section class="w-full max-w-7xl flex flex-col lg:flex-row gap-6 items-start justify-center">
+      <!-- Left: Quest Log -->
+      <div class="glass-orb rounded-[32px] p-6 flex-1 w-full lg:max-w-md min-h-[400px]" id="questPanel">
+        <div class="flex flex-col gap-4 h-full">
           <div>
-            <p class="text-xs uppercase hud-label text-slate-400">Quest Log</p>
-            <h2 class="font-display text-2xl">Daily Quests</h2>
+            <p class="text-xs uppercase hud-label text-slate-400 mb-1">Quest Log</p>
+            <h2 class="font-display text-2xl text-white">Objectives</h2>
           </div>
-          <button id="addQuest" class="px-3 py-1 text-xs uppercase tracking-[0.3em] rounded-full border border-violet-400/40 text-violet-200">Add</button>
+
+          <!-- Inline Add Quest (Placeholder for next step) -->
+          <div id="addQuestContainer" class="relative">
+              <input type="text" id="newQuestInput" placeholder="Initialize new vector..."
+                  class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition-colors">
+              <div class="absolute right-3 top-3 text-xs text-slate-600 font-mono tracking-tight pointer-events-none">ENTER</div>
+          </div>
+
+          <div id="questList" class="space-y-3 flex-1 overflow-y-auto custom-scrollbar"></div>
         </div>
-        <div id="questList" class="space-y-3"></div>
       </div>
 
-      <div class="flex flex-col items-center justify-center gap-6 flex-1 min-w-[280px]">
-        <div class="glass-orb cat-orb orb-float flex items-center justify-center" id="catOrb">
-          <div class="cat-silhouette">
-            <span class="cat-ear left"></span>
-            <span class="cat-ear right"></span>
+      <!-- Center: Timer (Focal Point) -->
+      <div class="glass-orb rounded-[40px] p-8 flex-[1.2] w-full lg:max-w-lg min-h-[450px] flex flex-col items-center justify-center relative overflow-hidden" id="timerPanel">
+        <div class="absolute inset-0 bg-violet-500/5 blur-[100px] rounded-full pointer-events-none"></div>
+
+        <div class="text-center mb-8 relative z-10">
+          <p class="text-xs uppercase hud-label text-violet-300 mb-2">System Core</p>
+          <h2 class="font-display text-3xl text-white tracking-wide">Focus Engine</h2>
+        </div>
+
+        <div class="timer-ring scale-110 mb-8 relative z-10" id="timerRing">
+          <div class="timer-content text-center">
+            <p class="text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-1">Time Remaining</p>
+            <p id="timerDisplay" class="font-display text-4xl font-bold text-white drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]">25:00</p>
           </div>
         </div>
-        <p class="text-sm text-slate-300 transition-colors duration-300" id="catStatus">Guardian Cat • XP: 0</p>
-      </div>
 
-      <div class="glass-orb rounded-[40px] p-6 flex-1 min-w-[280px]" id="timerPanel">
-        <div class="flex items-center justify-between mb-6">
-          <div>
-            <p class="text-xs uppercase hud-label text-slate-400">Holographic Timer</p>
-            <h2 class="font-display text-2xl">Pomodoro Core</h2>
-          </div>
+        <div class="flex gap-4 relative z-10">
+          <button id="timerToggle" class="px-8 py-3 rounded-full text-xs font-bold uppercase tracking-[0.2em] bg-violet-500/10 border border-violet-500/30 text-violet-200 hover:bg-violet-500/20 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.15)]">Initialize</button>
+          <button id="timerReset" class="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:border-white/30 hover:rotate-90 transition-all duration-300" title="Reset System">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+          </button>
         </div>
-        <div class="flex flex-col items-center gap-4">
-          <div class="timer-ring" id="timerRing">
-            <div class="timer-content text-center">
-              <p class="text-xs uppercase hud-label text-slate-400">Focus</p>
-              <p id="timerDisplay" class="text-3xl font-semibold">25:00</p>
-            </div>
-          </div>
-          <div class="flex gap-3">
-            <button id="timerToggle" class="px-4 py-2 rounded-full text-xs uppercase tracking-[0.3em] border border-violet-400/50 text-violet-200">Start</button>
-            <button id="timerReset" class="px-4 py-2 rounded-full text-xs uppercase tracking-[0.3em] border border-white/10 text-slate-300">Reset</button>
-          </div>
 
-          <div class="w-full mt-2">
-            <select id="timerQuestSelect" class="input-field text-xs bg-white/5 border-white/10 text-slate-300 rounded-xl">
-                <option value="">-- Link to Quest (Optional) --</option>
+        <div class="w-full max-w-xs mt-8 relative z-10 opacity-80 hover:opacity-100 transition-opacity">
+            <select id="timerQuestSelect" class="w-full bg-black/20 border border-white/5 text-slate-400 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-violet-500/30">
+                <option value="">-- Link to Objective (Optional) --</option>
             </select>
-          </div>
         </div>
+      </div>
+
+      <!-- Right: Personal Orbit -->
+      <div class="glass-orb rounded-[32px] p-6 flex-1 w-full lg:max-w-md min-h-[400px] flex flex-col" id="orbitPanel">
+         <div class="mb-4">
+            <p class="text-xs uppercase hud-label text-slate-400 mb-1">Status</p>
+            <h2 class="font-display text-2xl text-white">Personal Orbit</h2>
+         </div>
+         <div class="flex-1 flex items-center justify-center relative" id="personalOrbitContainer">
+            <!-- Orbit SVG injected here -->
+            <div class="text-slate-500 text-sm">Initializing Orbit...</div>
+         </div>
       </div>
     </section>
   </main>
@@ -557,7 +553,6 @@
     ];
 
     const DEFAULT_STATE = {
-      catXP: 0,
       habits: [
         {
           id: 'h_1',
@@ -623,13 +618,6 @@
 
     const statsEl = document.getElementById('stats');
     const questListEl = document.getElementById('questList');
-    const catOrb = document.getElementById('catOrb');
-
-    const levelUpCat = () => {
-      catOrb.classList.remove('level-up');
-      void catOrb.offsetWidth;
-      catOrb.classList.add('level-up');
-    };
 
     const getLast7Days = () => {
       const dates = [];
@@ -661,12 +649,6 @@
     };
 
     const renderStats = () => {
-      // Update global cat XP
-      const catStatus = document.getElementById('catStatus');
-      if (catStatus) {
-        catStatus.textContent = `Guardian Cat • XP: ${state.catXP || 0}`;
-      }
-
       statsEl.innerHTML = state.identities.map((identity, index) => {
         const score = calculateIdentityScore(identity.id);
         const level = Math.floor(score / 20) + 1; // 1 to 5+
@@ -693,154 +675,111 @@
 
     const renderQuests = () => {
       const today = getTodayKey();
+      // Show pending habits first, then completed ones (optional, or just pending)
+      // "One-click completion only... When a quest is completed, it should fade out or 'shimmer' away"
+      // This implies we only show pending ones, or we show completed ones differently.
+      // Let's show all but sort pending first.
+
       const activeHabits = state.habits.filter(h => !h.archived);
 
       if (activeHabits.length === 0) {
-        questListEl.innerHTML = `<div class="text-center text-slate-500 py-10">No active habits. <br>Click 'Add' to design a new one.</div>`;
+        questListEl.innerHTML = `<div class="text-center text-slate-500 py-10 text-sm">No active objectives.<br>Initialize a new vector above.</div>`;
         return;
       }
 
       questListEl.innerHTML = activeHabits.map(habit => {
-        const status = habit.history[today]; // 'full', 'emergency', 'missed' or undefined
-        const identity = state.identities.find(id => id.id === habit.category);
-        const color = identity ? identity.color : '#fff';
+        const status = habit.history[today];
+        const isDone = status === 'full' || status === 'emergency';
+        const safeTitle = escapeHtml(habit.title);
 
-        // Emergency Mode Logic
-        const displayTitle = emergencyMode ? (habit.emergency || habit.title) : habit.title;
-        const safeTitle = escapeHtml(displayTitle);
-        const isEmergency = emergencyMode && habit.emergency;
+        // Skip rendering completed items if we want them to "disappear" after animation,
+        // but for usability, keeping them visible as checked is often better.
+        // However, prompt said "fade out... away".
+        // Let's keep them in the list but dimmed/crossed out, unless we implement true removal.
+        // For now: Render them with 'done' state.
 
-        let content = '';
-        let cardClass = '';
-
-        if (status === 'full') {
-          cardClass = 'done-full';
-          content = `
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="font-medium text-lg text-white">${safeTitle}</h3>
-                <p class="text-xs text-violet-300 tracking-wider uppercase">Completed</p>
-              </div>
-              <div class="text-violet-400 text-xl">✔</div>
-            </div>
-          `;
-        } else if (status === 'emergency') {
-          cardClass = 'done-emergency';
-          content = `
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="font-medium text-lg text-white">${safeTitle}</h3>
-                <p class="text-xs text-amber-300 tracking-wider uppercase">Emergency Drill</p>
-              </div>
-              <div class="text-amber-400 text-xl">⚠</div>
-            </div>
-          `;
-        } else if (status === 'missed') {
-          cardClass = 'missed';
-          content = `
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="font-medium text-lg text-slate-400 line-through">${safeTitle}</h3>
-                <p class="text-xs text-red-300 tracking-wider uppercase">Missed</p>
-              </div>
-              <div class="text-red-400 text-xl">✕</div>
-            </div>
-          `;
-        } else {
-          // Pending state
-          content = `
-            <div class="flex flex-col gap-3">
-              <div class="flex items-start justify-between pointer-events-none">
-                <div>
-                  <h3 class="font-medium text-lg ${isEmergency ? 'text-amber-300' : 'text-white'}">${safeTitle}</h3>
-                  <p class="text-xs text-slate-400 mt-1">When: ${escapeHtml(habit.trigger)}</p>
-                </div>
-                <div class="w-2 h-2 rounded-full" style="background:${color}; box-shadow: 0 0 10px ${color}"></div>
-              </div>
-
-              <div class="text-xs text-slate-500 mt-1 pointer-events-none opacity-50">
-                  Tap to complete • Double-tap for options
-              </div>
-
-              <div class="struggle-row hidden flex-col gap-2 mt-2" id="struggle-${habit.id}" onclick="event.stopPropagation()">
-                <p class="text-xs text-slate-400 mb-1">Emergency Protocol: <span class="text-white">${escapeHtml(habit.emergency)}</span></p>
-                <div class="flex gap-2">
-                  <button class="btn-action btn-emergency flex-1" onclick="markHabit('${habit.id}', 'emergency')">Do Min. Viable</button>
-                  <button class="btn-action btn-missed" onclick="promptFriction('${habit.id}')">Log Miss</button>
-                </div>
-                <button class="text-xs text-slate-500 hover:text-red-400 mt-2 self-start" onclick="retireHabit('${habit.id}')">Retire this habit</button>
-              </div>
-            </div>
-          `;
-        }
+        if (isDone) return ''; // Hiding completed quests to simulate "disappearing"
 
         return `
-          <div class="habit-card ${cardClass} cursor-pointer hover:bg-white/10 select-none" style="border-left: 3px solid ${color}" onclick="handleHabitClick('${habit.id}')">
-            ${content}
+          <div class="group flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-violet-500/30 transition-all cursor-pointer select-none"
+               onclick="completeQuest('${habit.id}')">
+            <div class="w-5 h-5 rounded-full border border-violet-500/50 group-hover:bg-violet-500/20 group-hover:scale-110 transition-all flex items-center justify-center">
+                <div class="w-2 h-2 rounded-full bg-violet-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">${safeTitle}</h3>
+            </div>
+            <div class="opacity-0 group-hover:opacity-100 transition-opacity text-violet-400 text-xs tracking-wider">
+                INITIATE
+            </div>
           </div>
         `;
       }).join('');
     };
 
-    window.markHabit = (id, status) => {
-      const today = getTodayKey();
-      const habit = state.habits.find(h => h.id === id);
-      if (habit) {
-        habit.history[today] = status;
-        // Persistence of XP
-        if (status === 'full') state.catXP = (state.catXP || 0) + 100;
-        if (status === 'emergency') state.catXP = (state.catXP || 0) + 50;
-
-        saveState();
-        renderAll();
-        if (status === 'full' || status === 'emergency') {
+    window.completeQuest = (id) => {
+        const today = getTodayKey();
+        const habit = state.habits.find(h => h.id === id);
+        if (habit) {
+            habit.history[today] = 'full';
+            saveState();
             triggerConfetti();
-            triggerGlitch();
-        }
-      }
-    };
-
-    let clickTimeout = null;
-    const CLICK_DELAY = 250;
-
-    window.handleHabitClick = (id) => {
-      if (clickTimeout) {
-        clearTimeout(clickTimeout);
-        clickTimeout = null;
-        handleHabitDoubleClick(id);
-      } else {
-        clickTimeout = setTimeout(() => {
-          clickTimeout = null;
-          handleHabitSingleClick(id);
-        }, CLICK_DELAY);
-      }
-    };
-
-    window.handleHabitSingleClick = (id) => {
-        const status = emergencyMode ? 'emergency' : 'full';
-        markHabit(id, status);
-    };
-
-    window.handleHabitDoubleClick = (id) => {
-        const struggleRow = document.getElementById(`struggle-${id}`);
-        if (struggleRow) {
-            struggleRow.classList.toggle('hidden');
-            struggleRow.classList.toggle('flex');
+            renderAll(); // Re-render will hide it because of `if (isDone) return '';`
         }
     };
 
-    window.triggerGlitch = () => {
-        const cat = document.querySelector('.cat-silhouette');
-        if (cat) {
-            cat.classList.remove('glitch');
-            void cat.offsetWidth;
-            cat.classList.add('glitch');
-        }
+    // Add Quest Input Logic
+    const newQuestInput = document.getElementById('newQuestInput');
+    if (newQuestInput) {
+        newQuestInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const title = newQuestInput.value.trim();
+                if (title) {
+                    state.habits.push({
+                        id: generateId(),
+                        title,
+                        trigger: 'Daily', // Default
+                        emergency: title,
+                        category: 'cat_2', // Default to Focus
+                        history: {},
+                        friction_log: []
+                    });
+                    saveState();
+                    renderAll();
+                    newQuestInput.value = '';
+                }
+            }
+        });
+    }
 
-        const status = document.getElementById('catStatus');
-        if (status) {
-            status.classList.add('text-violet-400', 'font-bold');
-            setTimeout(() => status.classList.remove('text-violet-400', 'font-bold'), 500);
+    const renderOrbit = () => {
+        const today = getTodayKey();
+        const activeHabits = state.habits.filter(h => !h.archived);
+        const total = activeHabits.length;
+        const completed = activeHabits.filter(h => h.history[today] === 'full' || h.history[today] === 'emergency').length;
+
+        const percentage = total === 0 ? 0 : (completed / total) * 100;
+        const circumference = 2 * Math.PI * 54; // r=54
+        const offset = circumference - (percentage / 100) * circumference;
+
+        const orbitContainer = document.getElementById('personalOrbitContainer');
+        if (orbitContainer) {
+            orbitContainer.innerHTML = `
+                <div class="relative w-48 h-48 flex items-center justify-center">
+                    <svg class="w-full h-full transform -rotate-90">
+                        <circle cx="50%" cy="50%" r="54" stroke="currentColor" stroke-width="8" fill="transparent" class="text-white/5" />
+                        <circle cx="50%" cy="50%" r="54" stroke="currentColor" stroke-width="8" fill="transparent"
+                            stroke-dasharray="${circumference}"
+                            stroke-dashoffset="${offset}"
+                            stroke-linecap="round"
+                            class="text-violet-500 drop-shadow-[0_0_10px_rgba(139,92,246,0.5)] transition-all duration-1000 ease-out" />
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-3xl font-display font-bold text-white">${completed}<span class="text-slate-500 text-lg">/${total}</span></span>
+                        <span class="text-[10px] uppercase tracking-widest text-violet-300 mt-1">Orbit Sync</span>
+                    </div>
+                </div>
+            `;
         }
     };
 
@@ -1056,9 +995,9 @@
       reviewModal.el.addEventListener('click', (e) => { if (e.target === reviewModal.el) reviewModal.el.classList.remove('open'); });
     };
 
-    document.getElementById('addQuest').addEventListener('click', () => {
-      modal.open();
-    });
+    // document.getElementById('addQuest').addEventListener('click', () => {
+    //   modal.open();
+    // });
 
     const triggerConfetti = () => {
       confetti({
@@ -1105,8 +1044,7 @@
         // Automated Logging
         const linkedId = timerQuestSelect.value;
         if (linkedId) {
-            const status = emergencyMode ? 'emergency' : 'full';
-            markHabit(linkedId, status);
+            completeQuest(linkedId);
             timerQuestSelect.value = ""; // Reset
         } else {
             triggerConfetti();
@@ -1153,6 +1091,7 @@
       renderQuests();
       updateTimerUI();
       updateTimerSelect();
+      renderOrbit();
     };
 
     renderAll();
@@ -1163,46 +1102,7 @@
       animate('.hud-panel', { opacity: [0, 1], y: [20, 0] }, { duration: 0.9, delay: 0.1, type: 'spring' });
       animate('#questPanel', { opacity: [0, 1], x: [-30, 0] }, { duration: 1, delay: 0.2, type: 'spring' });
       animate('#timerPanel', { opacity: [0, 1], x: [30, 0] }, { duration: 1, delay: 0.2, type: 'spring' });
-      animate('#catOrb', { opacity: [0, 1], scale: [0.9, 1] }, { duration: 1.2, delay: 0.3, type: 'spring' });
     }
-
-    const canvas = document.getElementById('starfield');
-    const ctx = canvas.getContext('2d');
-    let stars = [];
-
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      stars = Array.from({ length: 140 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        radius: Math.random() * 1.4 + 0.2,
-        speed: Math.random() * 0.4 + 0.1,
-        alpha: Math.random() * 0.7 + 0.2
-      }));
-    };
-
-    const drawStars = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#ffffff';
-      stars.forEach((star) => {
-        star.y += star.speed;
-        if (star.y > canvas.height) {
-          star.y = 0;
-          star.x = Math.random() * canvas.width;
-        }
-        ctx.globalAlpha = star.alpha;
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.globalAlpha = 1;
-      requestAnimationFrame(drawStars);
-    };
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    drawStars();
   </script>
 </body>
 </html>
