@@ -1168,35 +1168,48 @@
 
     const canvas = document.getElementById('starfield');
     const ctx = canvas.getContext('2d');
-    let stars = [];
+    let starBuckets = {};
+    let bucketKeys = [];
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      stars = Array.from({ length: 140 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        radius: Math.random() * 1.4 + 0.2,
-        speed: Math.random() * 0.4 + 0.1,
-        alpha: Math.random() * 0.7 + 0.2
-      }));
+      starBuckets = {};
+
+      for (let i = 0; i < 140; i++) {
+        const alpha = Math.random() * 0.7 + 0.2;
+        const quantizedAlpha = Math.round(alpha * 10) / 10;
+
+        if (!starBuckets[quantizedAlpha]) starBuckets[quantizedAlpha] = [];
+
+        starBuckets[quantizedAlpha].push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.4 + 0.2,
+          speed: Math.random() * 0.4 + 0.1
+        });
+      }
+      bucketKeys = Object.keys(starBuckets);
     };
 
     const drawStars = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#ffffff';
-      stars.forEach((star) => {
-        star.y += star.speed;
-        if (star.y > canvas.height) {
-          star.y = 0;
-          star.x = Math.random() * canvas.width;
-        }
-        ctx.globalAlpha = star.alpha;
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        ctx.fill();
+
+      bucketKeys.forEach(alpha => {
+        const stars = starBuckets[alpha];
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+
+        stars.forEach((star) => {
+          star.y += star.speed;
+          if (star.y > canvas.height) {
+            star.y = 0;
+            star.x = Math.random() * canvas.width;
+          }
+          const size = star.radius * 2;
+          ctx.fillRect(star.x - star.radius, star.y - star.radius, size, size);
+        });
       });
-      ctx.globalAlpha = 1;
+
       requestAnimationFrame(drawStars);
     };
 
