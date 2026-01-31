@@ -3,14 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Peak Performance & Habit Dashboard</title>
+  <title>Habit Tracker — Obsidian Edition</title>
 
-  <!-- Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -22,507 +20,177 @@
     }
   </script>
 
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- Lucide -->
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 
   <style>
     :root{
-      --bg:#121212;
-      --card:#1e1e1e;
-      --accent:#6366f1; /* Electric Indigo */
+      --bg:#0b0b0d;
+      --card:rgba(18, 18, 18, 0.7);
+      --border:rgba(255, 255, 255, 0.08);
+      --accent:#00f5ff;
+      --muted:#8b8b93;
     }
 
-    /* Smooth focus-mode dim */
-    .focus-dim #appShell { filter: brightness(.55) saturate(.9); }
-    .focus-dim #focusOverlay { opacity: 1; pointer-events: auto; }
-    #appShell { transition: filter .35s ease; }
-
-    /* Subtle premium grain */
-    .grain::before{
-      content:"";
-      position:absolute; inset:0;
-      background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
-      background-size: 22px 22px;
-      opacity:.08;
-      pointer-events:none;
-      mask-image: radial-gradient(circle at 20% 0%, black 10%, transparent 55%);
+    *{
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Ring animation */
-    .ring-track { stroke: rgba(148,163,184,0.18); }
-    .ring-bar {
-      stroke: var(--accent);
-      filter: drop-shadow(0 0 10px rgba(99,102,241,.25));
-      transition: stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1);
+    body{
+      scroll-snap-type: y mandatory;
+      background: radial-gradient(circle at top, rgba(0,245,255,0.08), transparent 40%), var(--bg);
     }
 
-    /* Timeline line */
-    .timeline::before{
-      content:"";
-      position:absolute;
-      left: 13px;
-      top: 14px;
-      bottom: 14px;
-      width: 2px;
-      background: rgba(148,163,184,0.16);
-      border-radius: 999px;
+    .snap-section{
+      scroll-snap-align: start;
+      scroll-margin-top: 24px;
     }
 
-    /* Toggle switch */
-    .switch {
-      width: 44px; height: 24px;
-      border-radius: 999px;
-      background: rgba(148,163,184,0.20);
-      position: relative;
-      transition: background .2s ease;
-      border: 1px solid rgba(148,163,184,0.20);
-    }
-    .switch::after{
-      content:"";
-      position:absolute;
-      top: 2px; left: 2px;
-      width: 18px; height: 18px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.92);
-      transition: transform .2s ease, background .2s ease;
-      box-shadow: 0 6px 18px rgba(0,0,0,.35);
-    }
-    .switch[data-on="true"]{
-      background: rgba(99,102,241,0.65);
-      border-color: rgba(99,102,241,0.55);
-    }
-    .switch[data-on="true"]::after{ transform: translateX(20px); background: white; }
-
-    /* Micro glow on hover */
-    .glow-hover:hover{
-      box-shadow: 0 0 0 1px rgba(99,102,241,0.35), 0 12px 40px rgba(0,0,0,.45);
+    .glass-card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
     }
 
-    /* “High-tech” filter sheen */
-    .sheen{
-      background: linear-gradient(120deg,
-        rgba(99,102,241,0.10),
-        rgba(99,102,241,0.04) 38%,
-        rgba(148,163,184,0.02) 65%,
-        rgba(99,102,241,0.08));
+    .tile{
+      transition: transform 0.25s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+    }
+
+    .tile:hover{
+      transform: scale(1.03);
+    }
+
+    .tile:active{
+      transform: scale(0.98);
+    }
+
+    .tile.is-complete{
+      box-shadow: 0 0 30px rgba(0,245,255,0.28), 0 0 0 1px rgba(0,245,255,0.3);
+    }
+
+    .tile.is-complete .tile-title,
+    .tile.is-complete .tile-meta{
+      color: rgba(226,232,240,0.6);
+    }
+
+    .tile.is-complete .tile-status{
+      color: rgba(0,245,255,0.75);
+    }
+
+    .reveal{
+      opacity: 0;
+      transform: translateY(24px);
+    }
+
+    .reveal.is-visible{
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .bento-grid{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-auto-rows: 160px;
+      gap: 18px;
+      grid-auto-flow: dense;
+    }
+
+    .tile--wide{
+      grid-column: span 2;
+    }
+
+    .progress-ring{
+      stroke: rgba(0,245,255,0.9);
+      filter: drop-shadow(0 0 12px rgba(0,245,255,0.35));
+      transition: stroke-dashoffset 0.6s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .progress-track{
+      stroke: rgba(148,163,184,0.15);
     }
   </style>
 </head>
 
-<body class="font-inter bg-[var(--bg)] text-slate-100 selection:bg-[var(--accent)]/25">
-  <!-- Focus overlay -->
-  <div id="focusOverlay" class="fixed inset-0 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
-    <div class="absolute inset-0 bg-black/55 backdrop-blur-sm"></div>
-
-    <!-- Focus panel -->
-    <div class="relative h-full w-full flex items-end sm:items-center justify-center p-4">
-      <div class="w-full max-w-md rounded-2xl bg-[#151515] border border-slate-800/70 shadow-2xl overflow-hidden">
-        <div class="p-4 sm:p-5 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-3">
-            <div class="h-10 w-10 rounded-xl bg-[var(--accent)]/15 border border-[var(--accent)]/25 flex items-center justify-center">
-              <i data-lucide="timer" class="h-5 w-5 text-[var(--accent)]"></i>
-            </div>
-            <div>
-              <div class="text-sm text-slate-300">Focus Mode</div>
-              <div class="text-base font-semibold tracking-tight">Pomodoro — 25:00</div>
-            </div>
-          </div>
-          <button id="exitFocusBtn" class="group rounded-xl px-3 py-2 text-sm border border-slate-700/70 bg-slate-900/40 hover:bg-slate-900/70 hover:border-slate-600/80 transition">
-            <span class="inline-flex items-center gap-2">
-              <i data-lucide="x" class="h-4 w-4 text-slate-300 group-hover:text-white transition"></i>
-              Exit
-            </span>
-          </button>
+<body class="font-inter text-slate-100 selection:bg-[var(--accent)]/30">
+  <main class="max-w-6xl mx-auto px-4 py-10 space-y-10">
+    <section class="snap-section glass-card rounded-3xl p-6 sm:p-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <p class="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">Habit Tracker</p>
+          <h1 class="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">Obsidian Momentum Console</h1>
+          <p class="mt-2 text-sm text-slate-400">Minimal interface. Maximum follow-through.</p>
         </div>
-
-        <div class="px-5 pb-5">
-          <div class="rounded-2xl bg-[#0f0f0f] border border-slate-800/70 p-4">
-            <div class="flex items-center justify-between">
-              <div class="text-sm text-slate-400">Time remaining</div>
-              <div class="text-sm text-slate-400" id="focusStatus">Ready</div>
-            </div>
-
-            <div class="mt-3 flex items-end justify-between gap-3">
-              <div class="text-5xl sm:text-6xl font-bold tracking-tight tabular-nums" id="timerText">25:00</div>
-              <div class="flex items-center gap-2">
-                <button id="startPauseBtn" class="glow-hover rounded-xl px-4 py-2 text-sm font-semibold bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white transition">
-                  Start
-                </button>
-                <button id="resetBtn" class="rounded-xl px-4 py-2 text-sm font-semibold border border-slate-700/70 bg-slate-900/40 hover:bg-slate-900/70 hover:border-slate-600/80 transition">
-                  Reset
-                </button>
-              </div>
-            </div>
-
-            <div class="mt-4 h-2 rounded-full bg-slate-800/60 overflow-hidden">
-              <div id="timerBar" class="h-full w-0 bg-[var(--accent)] transition-[width] duration-500"></div>
-            </div>
-
-            <div class="mt-4 text-xs text-slate-400 leading-relaxed">
-              Tip: In Focus Mode, the dashboard dims. Keep this panel open and let the timer drive your sprint.
-            </div>
+        <div class="glass-card rounded-2xl px-4 py-3 flex items-center gap-4">
+          <div class="text-right">
+            <p class="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">Progress Gauge</p>
+            <p class="text-lg font-semibold" id="progressLabel">0% Complete</p>
+          </div>
+          <div class="relative w-20 h-20">
+            <svg width="80" height="80" viewBox="0 0 120 120">
+              <circle class="progress-track" cx="60" cy="60" r="46" stroke-width="10" fill="none"></circle>
+              <circle class="progress-ring" cx="60" cy="60" r="46" stroke-width="10" fill="none"
+                      stroke-linecap="round" transform="rotate(-90 60 60)" id="progressRing"></circle>
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center text-lg font-semibold" id="progressPct">0%</div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- App -->
-  <div id="appShell">
-    <header class="sticky top-0 z-40 bg-[var(--bg)]/70 backdrop-blur border-b border-slate-800/70">
-      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="relative h-10 w-10 rounded-2xl bg-[var(--accent)]/12 border border-[var(--accent)]/20 flex items-center justify-center overflow-hidden grain">
-            <i data-lucide="mountain-snow" class="h-5 w-5 text-[var(--accent)]"></i>
-          </div>
-          <div>
-            <div class="text-sm text-slate-400 leading-none">Peak Performance</div>
-            <div class="text-lg font-semibold tracking-tight">Habit Dashboard</div>
-          </div>
+    <section class="snap-section">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <p class="text-xs uppercase tracking-[0.35em] text-[var(--muted)]">Daily Habits</p>
+          <h2 class="text-xl font-semibold tracking-tight">Bento Habit Grid</h2>
         </div>
+        <button id="completeAllBtn" class="glass-card rounded-xl px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 hover:text-white transition">Complete All</button>
+      </div>
+      <div id="habitGrid" class="bento-grid"></div>
+    </section>
 
-        <div class="flex items-center gap-2">
-          <button id="focusBtn" class="glow-hover inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white transition">
-            <i data-lucide="sparkles" class="h-4 w-4"></i>
-            Focus Mode
-          </button>
-          <button id="resetDayBtn" class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm border border-slate-700/70 bg-slate-900/40 hover:bg-slate-900/70 hover:border-slate-600/80 transition">
-            <i data-lucide="rotate-ccw" class="h-4 w-4 text-slate-300"></i>
-            Reset Day
-          </button>
+    <section class="snap-section glass-card rounded-3xl p-6 sm:p-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <p class="text-xs uppercase tracking-[0.35em] text-[var(--muted)]">Momentum</p>
+          <h2 class="text-xl font-semibold tracking-tight">Consistency Graph</h2>
+          <p class="mt-1 text-sm text-slate-400">Weekly signal of habit adherence.</p>
+        </div>
+        <div class="glass-card rounded-2xl px-4 py-3 flex items-center gap-2">
+          <span class="h-2 w-2 rounded-full bg-[var(--accent)]"></span>
+          <span class="text-xs uppercase tracking-[0.3em] text-slate-300">Pulse</span>
         </div>
       </div>
-    </header>
 
-    <main class="max-w-6xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-      <!-- Top Rings -->
-      <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <!-- Ring Card Template -->
-        <div class="rounded-2xl bg-[var(--card)] border border-slate-800/70 p-4 glow-hover relative overflow-hidden">
-          <div class="absolute inset-0 opacity-60 pointer-events-none sheen"></div>
-
-          <div class="relative flex items-start justify-between">
-            <div>
-              <div class="text-sm text-slate-400">Today</div>
-              <div class="text-base font-semibold tracking-tight">Lifting (PPL)</div>
-              <div class="mt-1 text-xs text-slate-500">Tap the ring to adjust progress.</div>
-            </div>
-            <div class="h-10 w-10 rounded-xl bg-slate-950/40 border border-slate-800/70 flex items-center justify-center">
-              <i data-lucide="dumbbell" class="h-5 w-5 text-[var(--accent)]"></i>
-            </div>
-          </div>
-
-          <div class="relative mt-4 flex items-center justify-between">
-            <button class="ringBtn group" data-ring="lifting" aria-label="Lifting progress">
-              <svg width="116" height="116" viewBox="0 0 120 120" class="block">
-                <circle class="ring-track" cx="60" cy="60" r="46" stroke-width="10" fill="none"></circle>
-                <circle class="ring-bar" cx="60" cy="60" r="46" stroke-width="10" fill="none"
-                        stroke-linecap="round" transform="rotate(-90 60 60)"></circle>
-              </svg>
-              <div class="absolute -mt-[88px] ml-[0px] w-[116px] text-center pointer-events-none">
-                <div class="text-2xl font-bold tabular-nums" id="liftingPct">0%</div>
-                <div class="text-xs text-slate-400">Complete</div>
-              </div>
-            </button>
-
-            <div class="flex flex-col items-end gap-2">
-              <div class="text-xs text-slate-400">Quick adjust</div>
-              <div class="inline-flex rounded-xl border border-slate-800/70 bg-slate-950/30 overflow-hidden">
-                <button class="stepBtn px-3 py-2 text-sm hover:bg-slate-900/60 transition" data-ring="lifting" data-step="-10" aria-label="Decrease lifting">
-                  <i data-lucide="minus" class="h-4 w-4 text-slate-300"></i>
-                </button>
-                <div class="w-px bg-slate-800/70"></div>
-                <button class="stepBtn px-3 py-2 text-sm hover:bg-slate-900/60 transition" data-ring="lifting" data-step="10" aria-label="Increase lifting">
-                  <i data-lucide="plus" class="h-4 w-4 text-slate-300"></i>
-                </button>
-              </div>
-              <div class="text-xs text-slate-500">Goal: 100%</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-2xl bg-[var(--card)] border border-slate-800/70 p-4 glow-hover relative overflow-hidden">
-          <div class="absolute inset-0 opacity-60 pointer-events-none sheen"></div>
-
-          <div class="relative flex items-start justify-between">
-            <div>
-              <div class="text-sm text-slate-400">Today</div>
-              <div class="text-base font-semibold tracking-tight">Deep Work</div>
-              <div class="mt-1 text-xs text-slate-500">Pairs with Focus Mode timer.</div>
-            </div>
-            <div class="h-10 w-10 rounded-xl bg-slate-950/40 border border-slate-800/70 flex items-center justify-center">
-              <i data-lucide="brain" class="h-5 w-5 text-[var(--accent)]"></i>
-            </div>
-          </div>
-
-          <div class="relative mt-4 flex items-center justify-between">
-            <button class="ringBtn group" data-ring="deepwork" aria-label="Deep work progress">
-              <svg width="116" height="116" viewBox="0 0 120 120" class="block">
-                <circle class="ring-track" cx="60" cy="60" r="46" stroke-width="10" fill="none"></circle>
-                <circle class="ring-bar" cx="60" cy="60" r="46" stroke-width="10" fill="none"
-                        stroke-linecap="round" transform="rotate(-90 60 60)"></circle>
-              </svg>
-              <div class="absolute -mt-[88px] ml-[0px] w-[116px] text-center pointer-events-none">
-                <div class="text-2xl font-bold tabular-nums" id="deepworkPct">0%</div>
-                <div class="text-xs text-slate-400">Complete</div>
-              </div>
-            </button>
-
-            <div class="flex flex-col items-end gap-2">
-              <div class="text-xs text-slate-400">Quick adjust</div>
-              <div class="inline-flex rounded-xl border border-slate-800/70 bg-slate-950/30 overflow-hidden">
-                <button class="stepBtn px-3 py-2 text-sm hover:bg-slate-900/60 transition" data-ring="deepwork" data-step="-10" aria-label="Decrease deep work">
-                  <i data-lucide="minus" class="h-4 w-4 text-slate-300"></i>
-                </button>
-                <div class="w-px bg-slate-800/70"></div>
-                <button class="stepBtn px-3 py-2 text-sm hover:bg-slate-900/60 transition" data-ring="deepwork" data-step="10" aria-label="Increase deep work">
-                  <i data-lucide="plus" class="h-4 w-4 text-slate-300"></i>
-                </button>
-              </div>
-              <div class="text-xs text-slate-500">Target: 4 sprints</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-2xl bg-[var(--card)] border border-slate-800/70 p-4 glow-hover relative overflow-hidden">
-          <div class="absolute inset-0 opacity-60 pointer-events-none sheen"></div>
-
-          <div class="relative flex items-start justify-between">
-            <div>
-              <div class="text-sm text-slate-400">Today</div>
-              <div class="text-base font-semibold tracking-tight">Hydration</div>
-              <div class="mt-1 text-xs text-slate-500">Default: 8 cups baseline.</div>
-            </div>
-            <div class="h-10 w-10 rounded-xl bg-slate-950/40 border border-slate-800/70 flex items-center justify-center">
-              <i data-lucide="droplets" class="h-5 w-5 text-[var(--accent)]"></i>
-            </div>
-          </div>
-
-          <div class="relative mt-4 flex items-center justify-between">
-            <button class="ringBtn group" data-ring="hydration" aria-label="Hydration progress">
-              <svg width="116" height="116" viewBox="0 0 120 120" class="block">
-                <circle class="ring-track" cx="60" cy="60" r="46" stroke-width="10" fill="none"></circle>
-                <circle class="ring-bar" cx="60" cy="60" r="46" stroke-width="10" fill="none"
-                        stroke-linecap="round" transform="rotate(-90 60 60)"></circle>
-              </svg>
-              <div class="absolute -mt-[88px] ml-[0px] w-[116px] text-center pointer-events-none">
-                <div class="text-2xl font-bold tabular-nums" id="hydrationPct">0%</div>
-                <div class="text-xs text-slate-400"><span id="hydrationCups">0</span>/8 cups</div>
-              </div>
-            </button>
-
-            <div class="flex flex-col items-end gap-2">
-              <div class="text-xs text-slate-400">Quick pour</div>
-              <div class="inline-flex rounded-xl border border-slate-800/70 bg-slate-950/30 overflow-hidden">
-                <button class="cupBtn px-3 py-2 text-sm hover:bg-slate-900/60 transition" data-step="-1" aria-label="Decrease cups">
-                  <i data-lucide="minus" class="h-4 w-4 text-slate-300"></i>
-                </button>
-                <div class="w-px bg-slate-800/70"></div>
-                <button class="cupBtn px-3 py-2 text-sm hover:bg-slate-900/60 transition" data-step="1" aria-label="Increase cups">
-                  <i data-lucide="plus" class="h-4 w-4 text-slate-300"></i>
-                </button>
-              </div>
-              <div class="text-xs text-slate-500">Goal: 8 cups</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Middle -->
-      <section class="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <!-- Audit Log -->
-        <div class="lg:col-span-3 rounded-2xl bg-[var(--card)] border border-slate-800/70 p-4 sm:p-5 glow-hover relative overflow-hidden">
-          <div class="absolute inset-0 opacity-40 pointer-events-none sheen"></div>
-
-          <div class="relative flex items-start justify-between gap-3">
-            <div>
-              <div class="inline-flex items-center gap-2 text-sm text-slate-400">
-                <i data-lucide="clipboard-check" class="h-4 w-4 text-[var(--accent)]"></i>
-                Audit Log
-              </div>
-              <h2 class="mt-1 text-lg font-semibold tracking-tight">Daily Habit Timeline</h2>
-              <p class="mt-1 text-sm text-slate-400">Toggle completed items. Your rings reflect progress automatically.</p>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <button id="completeAllBtn" class="rounded-xl px-3 py-2 text-sm border border-slate-700/70 bg-slate-900/40 hover:bg-slate-900/70 hover:border-slate-600/80 transition">
-                <span class="inline-flex items-center gap-2">
-                  <i data-lucide="check-check" class="h-4 w-4 text-slate-300"></i>
-                  Complete all
-                </span>
-              </button>
-            </div>
-          </div>
-
-          <div class="relative mt-4 timeline space-y-3 pl-8">
-            <!-- Items injected by JS -->
-            <div id="auditList" class="space-y-3"></div>
-          </div>
-        </div>
-
-        <!-- Macro-Guard -->
-        <div class="lg:col-span-2 rounded-2xl bg-[var(--card)] border border-slate-800/70 p-4 sm:p-5 glow-hover relative overflow-hidden">
-          <div class="absolute inset-0 opacity-50 pointer-events-none sheen"></div>
-
-          <div class="relative flex items-start justify-between gap-3">
-            <div>
-              <div class="inline-flex items-center gap-2 text-sm text-slate-400">
-                <i data-lucide="shield" class="h-4 w-4 text-[var(--accent)]"></i>
-                Macro-Guard
-              </div>
-              <h2 class="mt-1 text-lg font-semibold tracking-tight">Meal Tracker</h2>
-              <p class="mt-1 text-sm text-slate-400">High-tech dietary filter with instant highlights.</p>
-            </div>
-            <div class="h-10 w-10 rounded-xl bg-slate-950/40 border border-slate-800/70 flex items-center justify-center">
-              <i data-lucide="scan-line" class="h-5 w-5 text-[var(--accent)]"></i>
-            </div>
-          </div>
-
-          <div class="relative mt-4 rounded-2xl border border-slate-800/70 bg-slate-950/30 p-4 overflow-hidden">
-            <div class="absolute inset-0 opacity-60 pointer-events-none"
-                 style="background: radial-gradient(circle at 18% 20%, rgba(99,102,241,.16), transparent 45%), radial-gradient(circle at 85% 30%, rgba(99,102,241,.10), transparent 50%);">
-            </div>
-
-            <div class="relative flex items-center justify-between">
-              <div class="text-sm font-semibold tracking-tight">Quick Filter</div>
-              <div class="text-xs text-slate-400" id="filterStatus">Showing: All</div>
-            </div>
-
-            <div class="relative mt-3 flex flex-wrap gap-2">
-              <button class="filterChip group rounded-full px-3 py-2 text-xs font-semibold border border-slate-700/70 bg-slate-900/40 hover:bg-slate-900/70 hover:border-slate-600/80 transition"
-                      data-filter="tomatoFree">
-                <span class="inline-flex items-center gap-2">
-                  <i data-lucide="ban" class="h-3.5 w-3.5 text-slate-300 group-hover:text-white transition"></i>
-                  Tomato-Free
-                </span>
-              </button>
-              <button class="filterChip group rounded-full px-3 py-2 text-xs font-semibold border border-slate-700/70 bg-slate-900/40 hover:bg-slate-900/70 hover:border-slate-600/80 transition"
-                      data-filter="beanFree">
-                <span class="inline-flex items-center gap-2">
-                  <i data-lucide="ban" class="h-3.5 w-3.5 text-slate-300 group-hover:text-white transition"></i>
-                  Bean-Free
-                </span>
-              </button>
-              <button id="clearFiltersBtn" class="ml-auto rounded-full px-3 py-2 text-xs font-semibold bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/25 hover:bg-[var(--accent)]/20 transition">
-                Clear
-              </button>
-            </div>
-
-            <div class="relative mt-4 space-y-2" id="mealList">
-              <!-- Meals injected by JS -->
-            </div>
-
-            <div class="relative mt-4 flex items-center justify-between text-xs text-slate-400">
-              <div class="inline-flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-[var(--accent)] shadow-[0_0_18px_rgba(99,102,241,.35)]"></span>
-                Highlighted = matches active filter(s)
-              </div>
-              <button id="addMealBtn" class="rounded-lg px-3 py-2 border border-slate-700/70 bg-slate-900/40 hover:bg-slate-900/70 hover:border-slate-600/80 transition">
-                <span class="inline-flex items-center gap-2">
-                  <i data-lucide="plus" class="h-4 w-4 text-slate-300"></i>
-                  Add
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Weekly Momentum -->
-      <section class="rounded-2xl bg-[var(--card)] border border-slate-800/70 p-4 sm:p-5 glow-hover relative overflow-hidden">
-        <div class="absolute inset-0 opacity-40 pointer-events-none sheen"></div>
-
-        <div class="relative flex items-start justify-between gap-3">
-          <div>
-            <div class="inline-flex items-center gap-2 text-sm text-slate-400">
-              <i data-lucide="trending-up" class="h-4 w-4 text-[var(--accent)]"></i>
-              Weekly Momentum
-            </div>
-            <h2 class="mt-1 text-lg font-semibold tracking-tight">Consistency Score</h2>
-            <p class="mt-1 text-sm text-slate-400">Fake data, real vibes. (Swap in your backend later.)</p>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <div class="hidden sm:flex items-center gap-2 rounded-xl border border-slate-800/70 bg-slate-950/25 px-3 py-2">
-              <span class="h-2 w-2 rounded-full bg-[var(--accent)]"></span>
-              <span class="text-xs text-slate-400">Score</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="relative mt-4 rounded-2xl border border-slate-800/70 bg-slate-950/20 p-3 sm:p-4">
-          <canvas id="momentumChart" height="110"></canvas>
-        </div>
-      </section>
-
-      <footer class="text-xs text-slate-500 flex items-center justify-between gap-3 pb-2">
-        <div class="inline-flex items-center gap-2">
-          <span class="h-2 w-2 rounded-full bg-[var(--accent)]/80"></span>
-          Nordic Dark Mode • Electric Indigo accent
-        </div>
-        <div class="inline-flex items-center gap-2">
-          <i data-lucide="lock" class="h-3.5 w-3.5"></i>
-          Local-only demo (no network calls)
-        </div>
-      </footer>
-    </main>
-  </div>
+      <div class="mt-4 glass-card rounded-2xl p-4">
+        <canvas id="momentumChart" height="120"></canvas>
+      </div>
+    </section>
+  </main>
 
   <script>
-    // ---------- Utilities ----------
     const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
     const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
     const $  = (sel, root=document) => root.querySelector(sel);
 
-    // ---------- State (with localStorage persistence) ----------
-    const STORAGE_KEY = "pphd_nordic_v1";
+    const STORAGE_KEY = "habit_obsidian_v1";
 
     const defaultState = {
-      rings: { lifting: 0, deepwork: 0, hydration: 0 },
-      hydrationCups: 0,
-      audit: [
-        { id:"lift", label:"Lift — PPL session", time:"07:30", ring:"lifting", weight: 50, done:false, icon:"dumbbell" },
-        { id:"walk", label:"10-min walk (post-meal)", time:"12:10", ring:"hydration", weight: 0, done:false, icon:"footprints" },
-        { id:"water", label:"Hydration — 8 cups target", time:"All day", ring:"hydration", weight: 50, done:false, icon:"droplets" },
-        { id:"deep1", label:"Deep Work — Sprint 1", time:"09:00", ring:"deepwork", weight: 25, done:false, icon:"brain" },
-        { id:"deep2", label:"Deep Work — Sprint 2", time:"10:00", ring:"deepwork", weight: 25, done:false, icon:"brain" },
-        { id:"deep3", label:"Deep Work — Sprint 3", time:"14:00", ring:"deepwork", weight: 25, done:false, icon:"brain" },
-        { id:"deep4", label:"Deep Work — Sprint 4", time:"15:00", ring:"deepwork", weight: 25, done:false, icon:"brain" }
-      ],
-      macro: {
-        filters: { tomatoFree:false, beanFree:false },
-        meals: [
-          { name:"Salmon + rice + cucumber", kcal: 640, tomatoFree:true, beanFree:true },
-          { name:"Chicken bowl (salsa)", kcal: 710, tomatoFree:false, beanFree:true },
-          { name:"Greek yogurt + berries", kcal: 280, tomatoFree:true, beanFree:true },
-          { name:"Chili (beans)", kcal: 520, tomatoFree:false, beanFree:false },
-          { name:"Eggs + spinach wrap", kcal: 430, tomatoFree:true, beanFree:true }
-        ]
-      }
+      habits: [
+        { id: "ritual", title: "Morning Ritual", detail: "Breathwork + journal", time: "06:30", icon: "sunrise", size: "wide", done: false },
+        { id: "deep", title: "Deep Focus", detail: "2 x 50 min sprints", time: "09:00", icon: "brain", size: "wide", done: false },
+        { id: "lift", title: "Strength", detail: "PPL cycle", time: "12:30", icon: "dumbbell", size: "single", done: false },
+        { id: "walk", title: "Recovery Walk", detail: "20 min outdoors", time: "15:00", icon: "footprints", size: "single", done: false },
+        { id: "hydrate", title: "Hydration", detail: "3L target", time: "All day", icon: "droplets", size: "single", done: false },
+        { id: "read", title: "Skill Reading", detail: "30 min", time: "20:00", icon: "book-open", size: "single", done: false },
+        { id: "shutdown", title: "Night Shutdown", detail: "Plan tomorrow", time: "22:00", icon: "moon", size: "wide", done: false }
+      ]
     };
 
     function loadState(){
-      try{
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if(!raw) return structuredClone(defaultState);
-        const parsed = JSON.parse(raw);
-        // soft merge so new defaults don't break older saves
-        return {
-          ...structuredClone(defaultState),
-          ...parsed,
-          rings: { ...defaultState.rings, ...(parsed.rings||{}) },
-          macro: {
-            ...defaultState.macro,
-            ...(parsed.macro||{}),
-            filters: { ...defaultState.macro.filters, ...((parsed.macro||{}).filters||{}) }
-          }
-        };
-      }catch{
-        return structuredClone(defaultState);
-      }
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return structuredClone(defaultState);
+      return { ...structuredClone(defaultState), ...JSON.parse(raw) };
     }
 
     function saveState(){
@@ -531,272 +199,99 @@
 
     let state = loadState();
 
-    // ---------- Habit Rings (SVG) ----------
     const RING_RADIUS = 46;
     const CIRC = 2 * Math.PI * RING_RADIUS;
 
-    const ringEls = {
-      lifting:   { pct: $("#liftingPct"),   circle: $$('[data-ring="lifting"] .ring-bar')[0] },
-      deepwork:  { pct: $("#deepworkPct"),  circle: $$('[data-ring="deepwork"] .ring-bar')[0] },
-      hydration: { pct: $("#hydrationPct"), circle: $$('[data-ring="hydration"] .ring-bar')[0] }
-    };
+    function renderProgress(){
+      const total = state.habits.length;
+      const done = state.habits.filter(h => h.done).length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
 
-    function setRing(ring, value){
-      state.rings[ring] = clamp(Math.round(value), 0, 100);
-      renderRings();
-      saveState();
+      const ring = $("#progressRing");
+      ring.style.strokeDasharray = `${CIRC} ${CIRC}`;
+      ring.style.strokeDashoffset = `${CIRC - (pct/100) * CIRC}`;
+
+      $("#progressPct").textContent = `${pct}%`;
+      $("#progressLabel").textContent = `${pct}% Complete`;
     }
 
-    function renderRings(){
-      Object.entries(ringEls).forEach(([key, obj]) => {
-        const pct = clamp(state.rings[key], 0, 100);
-        obj.circle.style.strokeDasharray = `${CIRC} ${CIRC}`;
-        obj.circle.style.strokeDashoffset = `${CIRC - (pct/100)*CIRC}`;
-        obj.pct.textContent = `${pct}%`;
-      });
+    function habitTileTemplate(habit, index){
+      const sizeClass = habit.size === "wide" ? "tile--wide" : "";
+      const statusText = habit.done ? "Complete" : "Pending";
 
-      // Hydration special text
-      $("#hydrationCups").textContent = `${state.hydrationCups}`;
+      return `
+        <button class="tile reveal glass-card rounded-3xl p-5 flex flex-col justify-between ${sizeClass} ${habit.done ? "is-complete" : ""}"
+                data-id="${habit.id}" data-index="${index}">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">${habit.time}</p>
+              <h3 class="tile-title mt-2 text-lg font-semibold">${habit.title}</h3>
+              <p class="tile-meta mt-1 text-sm text-slate-400">${habit.detail}</p>
+            </div>
+            <div class="h-10 w-10 rounded-2xl border border-white/10 bg-black/30 flex items-center justify-center">
+              <i data-lucide="${habit.icon}" class="h-5 w-5 ${habit.done ? "text-[var(--accent)]" : "text-slate-300"}"></i>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="tile-status text-xs uppercase tracking-[0.3em] ${habit.done ? "text-[var(--accent)]" : "text-slate-400"}">${statusText}</span>
+            <span class="text-xs text-slate-500">Tap to toggle</span>
+          </div>
+        </button>
+      `;
     }
 
-    // Tap ring cycles 0 -> 50 -> 100 -> 0
-    $$(".ringBtn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const ring = btn.dataset.ring;
-        const current = state.rings[ring] || 0;
-        const next = current >= 100 ? 0 : (current >= 50 ? 100 : 50);
-        setRing(ring, next);
-      });
-    });
-
-    // Step buttons for lifting/deepwork
-    $$(".stepBtn").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const ring = btn.dataset.ring;
-        const step = Number(btn.dataset.step);
-        setRing(ring, (state.rings[ring] || 0) + step);
-      });
-    });
-
-    // Hydration cups
-    $$(".cupBtn").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const step = Number(btn.dataset.step);
-        state.hydrationCups = clamp((state.hydrationCups || 0) + step, 0, 12);
-        // map cups (0..8) to ring (0..100), allow >8 to cap 100
-        const pct = clamp((state.hydrationCups / 8) * 100, 0, 100);
-        state.rings.hydration = Math.round(pct);
-        renderRings();
-        saveState();
-      });
-    });
-
-    // ---------- Audit Log ----------
-    function ringFromAudit(){
-      // Weighted totals per ring
-      const totals = { lifting:0, deepwork:0, hydration:0 };
-      const dones  = { lifting:0, deepwork:0, hydration:0 };
-
-      state.audit.forEach(item => {
-        const w = item.weight || 0;
-        if(item.ring && w > 0){
-          totals[item.ring] += w;
-          if(item.done) dones[item.ring] += w;
-        }
-      });
-
-      // Combine hydration cups signal with hydration audit weight:
-      // (keep cups as primary; audit toggles can "top off" to 100 if desired)
-      Object.keys(totals).forEach(ring => {
-        if(totals[ring] > 0){
-          const pct = Math.round((dones[ring] / totals[ring]) * 100);
-          if(ring === "hydration"){
-            // hydration already driven by cups; let audit push it upward slightly (max 100)
-            state.rings.hydration = clamp(Math.max(state.rings.hydration || 0, pct), 0, 100);
-          } else {
-            state.rings[ring] = clamp(pct, 0, 100);
-          }
-        }
-      });
-    }
-
-    function renderAudit(){
-      const list = $("#auditList");
-      list.innerHTML = "";
-
-      state.audit.forEach((item, idx) => {
-        const row = document.createElement("div");
-        row.className = "relative flex items-center justify-between gap-3 rounded-2xl border border-slate-800/70 bg-slate-950/20 p-3 hover:bg-slate-950/35 transition";
-        row.innerHTML = `
-          <div class="absolute -left-[22px] top-1/2 -translate-y-1/2">
-            <div class="h-7 w-7 rounded-full border border-slate-700/70 bg-[#141414] flex items-center justify-center shadow">
-              <i data-lucide="${item.icon}" class="h-4 w-4 ${item.done ? "text-[var(--accent)]" : "text-slate-400"}"></i>
-            </div>
-          </div>
-
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <div class="text-sm font-semibold tracking-tight truncate ${item.done ? "text-slate-200" : "text-slate-100"}">${item.label}</div>
-              ${item.weight ? `<span class="text-[10px] px-2 py-1 rounded-full border border-slate-800/70 bg-slate-900/30 text-slate-400">+${item.weight}%</span>` : ""}
-            </div>
-            <div class="text-xs text-slate-400 mt-0.5">${item.time} • <span class="text-slate-500">Sync:</span> <span class="text-slate-300">${item.ring || "—"}</span></div>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <div class="hidden sm:block text-xs ${item.done ? "text-[var(--accent)]" : "text-slate-500"} font-semibold">
-              ${item.done ? "Complete" : "Pending"}
-            </div>
-            <button class="auditToggle" data-id="${item.id}" aria-label="Toggle ${item.label}">
-              <div class="switch" data-on="${item.done}"></div>
-            </button>
-          </div>
-        `;
-        list.appendChild(row);
-      });
-
-      // Recreate lucide icons for injected nodes
+    function renderHabits(){
+      const grid = $("#habitGrid");
+      grid.innerHTML = state.habits.map(habitTileTemplate).join("");
       lucide.createIcons();
+      setupReveal();
     }
 
-    function toggleAudit(id){
-      const i = state.audit.findIndex(x => x.id === id);
-      if(i < 0) return;
-      state.audit[i].done = !state.audit[i].done;
-
-      ringFromAudit();
-      renderRings();
-      renderAudit();
+    function toggleHabit(id){
+      const habit = state.habits.find(h => h.id === id);
+      if(!habit) return;
+      habit.done = !habit.done;
       saveState();
+      renderHabits();
+      renderProgress();
     }
 
-    document.addEventListener("click", (e) => {
-      const btn = e.target.closest(".auditToggle");
-      if(btn) toggleAudit(btn.dataset.id);
+    $("#habitGrid").addEventListener("click", (e) => {
+      const tile = e.target.closest(".tile");
+      if(!tile) return;
+      toggleHabit(tile.dataset.id);
     });
 
     $("#completeAllBtn").addEventListener("click", () => {
-      state.audit = state.audit.map(x => ({...x, done:true}));
-      ringFromAudit();
-      renderRings();
-      renderAudit();
+      state.habits = state.habits.map(h => ({ ...h, done: true }));
       saveState();
+      renderHabits();
+      renderProgress();
     });
 
-    $("#resetDayBtn").addEventListener("click", () => {
-      state = structuredClone(defaultState);
-      saveState();
-      renderAll();
-    });
-
-    // ---------- Macro-Guard ----------
-    function computeMealHighlight(meal){
-      const f = state.macro.filters;
-      const active = Object.values(f).some(Boolean);
-      if(!active) return { match: true, active: false };
-
-      const checks = [];
-      if(f.tomatoFree) checks.push(meal.tomatoFree);
-      if(f.beanFree) checks.push(meal.beanFree);
-
-      return { match: checks.every(Boolean), active: true };
-    }
-
-    function renderMacro(){
-      // chip state
-      $$(".filterChip").forEach(chip => {
-        const k = chip.dataset.filter;
-        const on = !!state.macro.filters[k];
-        chip.className =
-          "filterChip group rounded-full px-3 py-2 text-xs font-semibold border transition " +
-          (on
-            ? "border-[var(--accent)]/40 bg-[var(--accent)]/15 text-[var(--accent)] hover:bg-[var(--accent)]/20"
-            : "border-slate-700/70 bg-slate-900/40 text-slate-200 hover:bg-slate-900/70 hover:border-slate-600/80");
+    function setupReveal(){
+      const tiles = $$(".reveal");
+      tiles.forEach((tile, index) => {
+        tile.style.transitionDelay = `${index * 50}ms`;
       });
 
-      const f = state.macro.filters;
-      const activeNames = [];
-      if(f.tomatoFree) activeNames.push("Tomato-Free");
-      if(f.beanFree) activeNames.push("Bean-Free");
-      $("#filterStatus").textContent = activeNames.length ? `Showing: ${activeNames.join(" + ")}` : "Showing: All";
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if(entry.isIntersecting){
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2 });
 
-      const list = $("#mealList");
-      list.innerHTML = "";
-
-      state.macro.meals.forEach((meal) => {
-        const { match, active } = computeMealHighlight(meal);
-
-        const row = document.createElement("div");
-        row.className =
-          "rounded-xl border p-3 transition relative overflow-hidden " +
-          (active && match
-            ? "border-[var(--accent)]/35 bg-[var(--accent)]/10 shadow-[0_0_0_1px_rgba(99,102,241,.12)]"
-            : "border-slate-800/70 bg-slate-950/20 hover:bg-slate-950/30");
-
-        row.innerHTML = `
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <div class="text-sm font-semibold tracking-tight truncate">${meal.name}</div>
-              <div class="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-400">
-                <span class="px-2 py-1 rounded-full border border-slate-800/70 bg-slate-900/30">${meal.kcal} kcal</span>
-                <span class="px-2 py-1 rounded-full border ${meal.tomatoFree ? "border-emerald-400/20 text-emerald-200 bg-emerald-400/10" : "border-rose-400/20 text-rose-200 bg-rose-400/10"}">
-                  ${meal.tomatoFree ? "Tomato-Free" : "Has Tomato"}
-                </span>
-                <span class="px-2 py-1 rounded-full border ${meal.beanFree ? "border-emerald-400/20 text-emerald-200 bg-emerald-400/10" : "border-rose-400/20 text-rose-200 bg-rose-400/10"}">
-                  ${meal.beanFree ? "Bean-Free" : "Has Beans"}
-                </span>
-              </div>
-            </div>
-
-            <button class="mealStar rounded-lg p-2 border border-slate-800/70 bg-slate-950/30 hover:bg-slate-900/50 transition" aria-label="Pin meal">
-              <i data-lucide="pin" class="h-4 w-4 ${active && match ? "text-[var(--accent)]" : "text-slate-400"}"></i>
-            </button>
-          </div>
-        `;
-
-        list.appendChild(row);
-      });
-
-      lucide.createIcons();
+      tiles.forEach(tile => observer.observe(tile));
     }
 
-    document.addEventListener("click", (e) => {
-      const chip = e.target.closest(".filterChip");
-      if(!chip) return;
-      const k = chip.dataset.filter;
-      state.macro.filters[k] = !state.macro.filters[k];
-      renderMacro();
-      saveState();
-    });
-
-    $("#clearFiltersBtn").addEventListener("click", () => {
-      state.macro.filters.tomatoFree = false;
-      state.macro.filters.beanFree = false;
-      renderMacro();
-      saveState();
-    });
-
-    $("#addMealBtn").addEventListener("click", () => {
-      // Minimal “subscription-app” add: push a new meal with random flags
-      const samples = [
-        { name:"Turkey + quinoa + greens", kcal: 610, tomatoFree:true, beanFree:true },
-        { name:"Tuna salad (tomato)", kcal: 490, tomatoFree:false, beanFree:true },
-        { name:"Tofu stir-fry (beans)", kcal: 560, tomatoFree:true, beanFree:false },
-        { name:"Steak + potatoes", kcal: 740, tomatoFree:true, beanFree:true }
-      ];
-      const pick = samples[Math.floor(Math.random()*samples.length)];
-      state.macro.meals.unshift(pick);
-      renderMacro();
-      saveState();
-    });
-
-    // ---------- Chart.js (Nordic dark) ----------
     let chart;
     function renderChart(){
       const ctx = $("#momentumChart");
       const labels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-      const data = [62, 70, 66, 74, 81, 78, 86]; // fake consistency score
+      const data = [64, 70, 66, 78, 82, 80, 88];
 
       if(chart) chart.destroy();
 
@@ -805,16 +300,16 @@
         data: {
           labels,
           datasets: [{
-            label: "Consistency Score",
+            label: "Consistency",
             data,
-            borderColor: "rgba(99,102,241,1)",
-            backgroundColor: "rgba(99,102,241,0.15)",
+            borderColor: "rgba(0,245,255,0.9)",
+            backgroundColor: "rgba(0,245,255,0.12)",
             fill: true,
             tension: 0.35,
             borderWidth: 2,
             pointRadius: 3,
             pointHoverRadius: 5,
-            pointBackgroundColor: "rgba(99,102,241,1)"
+            pointBackgroundColor: "rgba(0,245,255,0.9)"
           }]
         },
         options: {
@@ -823,8 +318,8 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: "rgba(15,15,15,0.95)",
-              borderColor: "rgba(148,163,184,0.25)",
+              backgroundColor: "rgba(12,12,14,0.95)",
+              borderColor: "rgba(255,255,255,0.08)",
               borderWidth: 1,
               titleColor: "rgba(226,232,240,1)",
               bodyColor: "rgba(226,232,240,0.9)",
@@ -833,13 +328,13 @@
           },
           scales: {
             x: {
-              grid: { color: "rgba(148,163,184,0.10)" },
+              grid: { color: "rgba(255,255,255,0.05)" },
               ticks: { color: "rgba(148,163,184,0.85)" }
             },
             y: {
               suggestedMin: 40,
               suggestedMax: 100,
-              grid: { color: "rgba(148,163,184,0.10)" },
+              grid: { color: "rgba(255,255,255,0.05)" },
               ticks: { color: "rgba(148,163,184,0.85)" }
             }
           }
@@ -847,124 +342,12 @@
       });
     }
 
-    // ---------- Focus Mode (Pomodoro) ----------
-    const FOCUS_MINUTES = 25;
-    const totalSeconds = FOCUS_MINUTES * 60;
-    let remaining = totalSeconds;
-    let timer = null;
-    let running = false;
-
-    function fmtTime(sec){
-      const m = Math.floor(sec / 60);
-      const s = sec % 60;
-      return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
-    }
-
-    function setFocusUI(){
-      $("#timerText").textContent = fmtTime(remaining);
-      const done = (totalSeconds - remaining);
-      const pct = clamp((done / totalSeconds) * 100, 0, 100);
-      $("#timerBar").style.width = `${pct}%`;
-
-      $("#startPauseBtn").textContent = running ? "Pause" : "Start";
-      $("#focusStatus").textContent = running ? "In session" : "Ready";
-    }
-
-    function tick(){
-      if(remaining <= 0){
-        stopTimer();
-        remaining = 0;
-        setFocusUI();
-
-        // gentle "completed" feedback
-        $("#focusStatus").textContent = "Complete ✅";
-        try {
-          // tiny chime (no network)
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const o = ctx.createOscillator();
-          const g = ctx.createGain();
-          o.type = "sine";
-          o.frequency.value = 880;
-          g.gain.value = 0.0001;
-          o.connect(g); g.connect(ctx.destination);
-          o.start();
-          g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.01);
-          g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
-          o.stop(ctx.currentTime + 0.65);
-        } catch {}
-        return;
-      }
-      remaining -= 1;
-      setFocusUI();
-    }
-
-    function startTimer(){
-      if(timer) return;
-      running = true;
-      setFocusUI();
-      timer = setInterval(tick, 1000);
-    }
-
-    function stopTimer(){
-      running = false;
-      setFocusUI();
-      clearInterval(timer);
-      timer = null;
-    }
-
-    function resetTimer(){
-      stopTimer();
-      remaining = totalSeconds;
-      $("#focusStatus").textContent = "Ready";
-      setFocusUI();
-    }
-
-    function enterFocusMode(){
-      document.body.classList.add("focus-dim");
-      // if you want: auto-start on enter
-      setFocusUI();
-    }
-
-    function exitFocusMode(){
-      document.body.classList.remove("focus-dim");
-      // keep timer running if you want “background focus”; here we keep it running.
-    }
-
-    $("#focusBtn").addEventListener("click", enterFocusMode);
-    $("#exitFocusBtn").addEventListener("click", exitFocusMode);
-
-    $("#startPauseBtn").addEventListener("click", () => {
-      if(running) stopTimer();
-      else startTimer();
-    });
-
-    $("#resetBtn").addEventListener("click", resetTimer);
-
-    // Esc to exit focus overlay
-    window.addEventListener("keydown", (e) => {
-      if(e.key === "Escape" && document.body.classList.contains("focus-dim")){
-        exitFocusMode();
-      }
-    });
-
-    // Click outside panel exits
-    $("#focusOverlay").addEventListener("click", (e) => {
-      const panel = e.target.closest(".max-w-md");
-      if(!panel) exitFocusMode();
-    });
-
-    // ---------- Render all ----------
     function renderAll(){
-      ringFromAudit();
-      renderRings();
-      renderAudit();
-      renderMacro();
+      renderProgress();
+      renderHabits();
       renderChart();
-      setFocusUI();
-      lucide.createIcons();
     }
 
-    // Initial boot
     renderAll();
   </script>
 </body>
