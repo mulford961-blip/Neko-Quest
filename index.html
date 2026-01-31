@@ -558,6 +558,7 @@
 
     const DEFAULT_STATE = {
       catXP: 0,
+      globalTagCounts: {},
       habits: [
         {
           id: 'h_1',
@@ -603,7 +604,21 @@
       try {
         const parsed = JSON.parse(raw);
         // Merge with defaults to ensure structure integrity
-        return { ...structuredClone(DEFAULT_STATE), ...parsed };
+        const loadedState = { ...structuredClone(DEFAULT_STATE), ...parsed };
+
+        // Migration: Initialize globalTagCounts if missing
+        if (!parsed.globalTagCounts) {
+          loadedState.globalTagCounts = {};
+          loadedState.habits.forEach(h => {
+            h.friction_log.forEach(entry => {
+              entry.reasons.forEach(tag => {
+                loadedState.globalTagCounts[tag] = (loadedState.globalTagCounts[tag] || 0) + 1;
+              });
+            });
+          });
+        }
+
+        return loadedState;
       } catch (err) {
         return structuredClone(DEFAULT_STATE);
       }
@@ -875,16 +890,8 @@
       },
 
       render() {
-        // Calculate Friction
-        const tagCounts = {};
-        state.habits.forEach(h => {
-          // Include archived habits in friction stats for learning
-          h.friction_log.forEach(entry => {
-            entry.reasons.forEach(tag => {
-              tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-            });
-          });
-        });
+        // Use cached Friction counts
+        const tagCounts = state.globalTagCounts || {};
 
         const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
 
@@ -997,6 +1004,13 @@
             reasons: this.selectedTags,
             notes: document.getElementById('frictionNotes').value
           });
+
+          // Incremental Update
+          if (!state.globalTagCounts) state.globalTagCounts = {};
+          this.selectedTags.forEach(tag => {
+            state.globalTagCounts[tag] = (state.globalTagCounts[tag] || 0) + 1;
+          });
+
           saveState();
           renderAll();
         }
